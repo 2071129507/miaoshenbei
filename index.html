@@ -19,6 +19,30 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
         
+        /* 公告栏 */
+        #announcement-bar {
+            display: none;
+            background: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 101;
+            font-size: 0.9rem;
+        }
+        #announcement-bar button {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
         /* 导航栏 */
         .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .navbar h1 { font-size: 1.5rem; }
@@ -91,6 +115,36 @@
         .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
 
+        /* 弹窗样式 (用于一图流预览) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+            text-align: center;
+            position: relative;
+        }
+        .modal-content img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #eee;
+        }
+        .close-modal {
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; cursor: pointer; color: #666;
+        }
+
         /* 响应式适配 */
         @media (max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
@@ -105,6 +159,12 @@
     </style>
 </head>
 <body>
+
+    <!-- 公告栏 -->
+    <div id="announcement-bar">
+        <span id="announcement-text"></span>
+        <button onclick="document.getElementById('announcement-bar').style.display='none'">✕</button>
+    </div>
 
     <nav class="navbar">
         <h1>🏆 精灵对战比赛系统</h1>
@@ -123,7 +183,6 @@
                     <label>属性:</label>
                     <select id="filterElement" onchange="renderSpirits()">
                         <option value="all">全部</option>
-                        <!-- 选项由 JS 动态生成 -->
                     </select>
                 </div>
                 <div class="filter-group">
@@ -141,7 +200,6 @@
                     <label>类别:</label>
                     <select id="filterCategory" onchange="renderSpirits()">
                         <option value="all">全部</option>
-                        <!-- 选项由 JS 动态生成 -->
                     </select>
                 </div>
             </div>
@@ -204,6 +262,16 @@
         </div>
     </div>
 
+    <!-- 一图流预览弹窗 -->
+    <div id="imageModal" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content">
+            <span class="close-modal" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
+            <h3 style="margin-bottom: 10px;">阵容预览</h3>
+            <img id="previewImg" src="" alt="阵容图">
+            <p style="margin-top: 15px; color: #666; font-size: 0.9rem;">💡 手机端请长按图片选择“保存图片”</p>
+        </div>
+    </div>
+
     <!-- Toast 提示 -->
     <div class="toast" id="toast"></div>
 
@@ -232,7 +300,6 @@
         function getElementColor(element) {
             if (!element) return '#9ca3af';
             if (defaultElementColors[element]) return defaultElementColors[element];
-            // 如果没有预定义，根据字符串生成一个稳定的颜色
             let hash = 0;
             for (let i = 0; i < element.length; i++) {
                 hash = element.charCodeAt(i) + ((hash << 5) - hash);
@@ -250,8 +317,9 @@
         // ================= 初始化 =================
         window.onload = async function() {
             initSupabase();
+            await loadAnnouncement(); // 加载公告
             await loadSpiritsFromDB(); 
-            updateFilters(); // 动态更新筛选器
+            updateFilters(); 
             renderSpirits();
             renderMyTeam();
             renderPublicTeams('32');
@@ -261,37 +329,48 @@
             if (typeof window.supabase !== 'undefined') {
                 try {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    console.log("Supabase 客户端初始化成功");
                 } catch (e) {
                     console.error("Supabase 初始化失败:", e);
                 }
-            } else {
-                console.warn("Supabase 库未加载完成，将使用模拟数据");
             }
         }
 
-        // ================= 数据库交互 =================
+        // ================= 数据库交互：公告 =================
+        async function loadAnnouncement() {
+            if (!supabaseClient) return;
+            try {
+                let { data, error } = await supabaseClient
+                    .from('announcements')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (!error && data && data.length > 0) {
+                    const bar = document.getElementById('announcement-bar');
+                    const text = document.getElementById('announcement-text');
+                    text.textContent = data[0].content;
+                    bar.style.display = 'block';
+                }
+            } catch (err) {
+                console.log("公告加载跳过");
+            }
+        }
+
+        // ================= 数据库交互：精灵数据 =================
         async function loadSpiritsFromDB() {
             if (!supabaseClient) {
-                console.warn('Supabase 客户端不存在，使用模拟数据');
                 spiritsData = mockSpiritsData;
                 return;
             }
 
             try {
-                console.log('正在从数据库获取精灵数据...');
                 const { data, error } = await supabaseClient.from('spirits').select('*');
-                
-                if (error) {
-                    throw error;
-                }
-
+                if (error) throw error;
                 if (data && data.length > 0) {
                     spiritsData = data;
-                    console.log(`成功从数据库加载 ${data.length} 条数据`);
                     showToast('✅ 数据库连接成功！');
                 } else {
-                    console.log('数据库为空，使用模拟数据');
                     spiritsData = mockSpiritsData;
                 }
             } catch (err) {
@@ -306,17 +385,14 @@
             const attrSelect = document.getElementById('filterElement');
             const catSelect = document.getElementById('filterCategory');
             
-            // 提取所有不重复的属性和类别
             const uniqueElements = [...new Set(spiritsData.map(s => s.element).filter(Boolean))];
             const uniqueCategories = [...new Set(spiritsData.map(s => s.category).filter(Boolean))];
             
-            // 重建属性选项
             attrSelect.innerHTML = '<option value="all">全部</option>';
             uniqueElements.forEach(el => {
                 attrSelect.innerHTML += `<option value="${el}">${el}</option>`;
             });
             
-            // 重建类别选项
             catSelect.innerHTML = '<option value="all">全部</option>';
             uniqueCategories.forEach(cat => {
                 catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
@@ -338,11 +414,9 @@
             });
 
             grid.innerHTML = filtered.map(s => {
-                // 兼容不同的图片字段名，优先使用 image_url
                 const imgUrl = s.image_url || s.img || s.avatar || '';
                 const color = getElementColor(s.element);
                 
-                // 图片渲染逻辑：如果有URL则显示图片，否则显示Emoji
                 const imgContent = imgUrl ? 
                     `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                      <div class="fallback-emoji" style="display:none;">${s.emoji || '👾'}</div>` : 
@@ -369,16 +443,14 @@
         function filterByElement(el) {
             document.getElementById('filterElement').value = el;
             renderSpirits();
-            showToast(`已筛选属性: ${el}`);
         }
 
         function filterByCost(cost) {
             document.getElementById('filterCost').value = cost;
             renderSpirits();
-            showToast(`已筛选费用: ${cost}费`);
         }
 
-        // ================= 核心功能：购物车(底部悬浮) =================
+        // ================= 核心功能：购物车 =================
         function toggleCart(id) {
             const spirit = spiritsData.find(s => s.id === id);
             const index = currentCart.findIndex(c => c.id === id);
@@ -417,14 +489,10 @@
             renderSpirits();
         }
 
-        // ================= 核心功能：我的阵容(本地存储) =================
+        // ================= 核心功能：我的阵容 =================
         function saveToMyTeam() {
             if (currentCart.length === 0) {
                 showToast('请先选择精灵！');
-                return;
-            }
-            if (currentCart.length < 1 || currentCart.length > 6) {
-                showToast('阵容需要1-6只精灵！');
                 return;
             }
             
@@ -474,7 +542,7 @@
             }
         }
 
-        // ================= 核心功能：生成一图流 PNG =================
+        // ================= 核心功能：生成一图流 PNG (修复手机端) =================
         function generateTeamImage() {
             if (myTeams.length === 0) {
                 showToast('没有可生成的阵容！');
@@ -542,12 +610,19 @@
             ctx.textAlign = 'left';
             ctx.fillText('费用构成: ' + team.spirits.map(s => `${s.name}(${s.cost})`).join(' + '), 50, bottomY + 40);
 
+            // 转换为图片并显示在弹窗中
+            const dataURL = canvas.toDataURL('image/png');
+            const modal = document.getElementById('imageModal');
+            const previewImg = document.getElementById('previewImg');
+            
+            previewImg.src = dataURL;
+            modal.style.display = 'flex';
+            
+            // 尝试自动下载 (仅对部分PC浏览器有效)
             const link = document.createElement('a');
             link.download = `精灵阵容_${new Date().getTime()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataURL;
             link.click();
-            
-            showToast('一图流已生成并下载！');
         }
 
         // ================= 核心功能：比赛阵容提交与公示 =================
