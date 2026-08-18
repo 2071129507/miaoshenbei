@@ -229,9 +229,9 @@
                         <strong>支持格式：</strong><br>
                         1. 直接从 Excel/WPS 复制表格内容粘贴<br>
                         2. 粘贴 CSV 文本 (逗号分隔)<br>
-                        <span style="color:#ef4444; font-size:0.8rem;">注意：请确保第一行是表头 (name, cost, element, category, emoji)</span>
+                        <span style="color:#ef4444; font-size:0.8rem;">注意：请确保第一行是表头 (name, cost, element, category, image_url)</span>
                     </p>
-                    <textarea id="csvInput" class="import-input" placeholder="在此处粘贴你的表格数据...&#10;例如：&#10;name	cost	element	category	emoji&#10;喵喵	1	草	御三家	https://..."></textarea>
+                    <textarea id="csvInput" class="import-input" placeholder="在此处粘贴你的表格数据...&#10;例如：&#10;name	cost	element	category	image_url&#10;喵喵	1	草	御三家	https://..."></textarea>
                     <div style="margin-top:10px; display:flex; gap:10px;">
                         <button class="btn btn-primary" onclick="parseAndImportCSV()">开始智能解析并导入</button>
                         <button class="btn btn-secondary" onclick="downloadTemplate()">下载模板</button>
@@ -464,14 +464,21 @@
             });
 
             grid.innerHTML = filtered.map(s => {
-                // 优先使用 image_url，如果没有则尝试 emoji 字段（如果是链接的话）
-                const imgUrl = s.image_url || (s.emoji && s.emoji.startsWith('http') ? s.emoji : null);
+                // 【核心修改】严格优先使用 image_url 字段
+                const imgUrl = s.image_url; 
+                
+                // 如果没有 image_url，才尝试使用 emoji (如果是链接的话) 或者显示默认表情
                 const displayEmoji = s.emoji && !s.emoji.startsWith('http') ? s.emoji : '👾';
                 
-                const imgContent = imgUrl ? 
-                    `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                     <div class="fallback-emoji" style="display:none;">${displayEmoji}</div>` : 
-                    `<div class="fallback-emoji">${displayEmoji}</div>`;
+                let imgContent = '';
+                if (imgUrl) {
+                    // 如果有图片链接，显示图片
+                    imgContent = `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="fallback-emoji" style="display:none;">${displayEmoji}</div>`;
+                } else {
+                    // 否则只显示表情
+                    imgContent = `<div class="fallback-emoji">${displayEmoji}</div>`;
+                }
 
                 const color = getElementColor(s.element);
 
@@ -594,9 +601,10 @@
             showToast('一图流生成功能正在开发中...');
         }
 
-        // ================= 批量导入逻辑 (智能增强版) =================
+        // ================= 批量导入逻辑 (严格 Image URL 版) =================
         function downloadTemplate() {
-            const csvContent = "name,cost,element,category,emoji\n新精灵,3,火,攻击,🔥\n测试精灵,1,水,防御,💧";
+            // 【核心修改】模板表头改为 image_url
+            const csvContent = "name,cost,element,category,image_url\n新精灵,3,火,攻击,https://example.com/img.png\n测试精灵,1,水,防御,https://example.com/img2.png";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
@@ -637,22 +645,19 @@
                     obj[header] = val;
                 });
                 
-                // 数据清洗与映射
-                // 注意：这里假设用户粘贴的最后一列如果是链接，我们将其视为 image_url
-                // 如果表头里明确有 image_url 则用 image_url，否则如果 emoji 列是 http 开头，也视为图片
+                // 【核心修改】数据清洗与映射：严格使用 image_url
                 if (obj.name) {
                     let finalImg = null;
                     let finalEmoji = obj.emoji || '👾';
 
-                    // 如果 emoji 列看起来像个链接
-                    if (finalEmoji && finalEmoji.startsWith('http')) {
+                    // 1. 优先检查是否有专门的 image_url 列
+                    if (obj.image_url && obj.image_url.trim() !== '') {
+                        finalImg = obj.image_url.trim();
+                    } 
+                    // 2. 如果没有 image_url 列，但 emoji 列看起来像个链接（兼容旧数据）
+                    else if (finalEmoji && finalEmoji.startsWith('http')) {
                         finalImg = finalEmoji;
-                        finalEmoji = '👾'; // 重置为默认表情，因为链接已经拿去当图片了
-                    }
-                    
-                    // 如果有专门的 image_url 列
-                    if (obj.image_url) {
-                        finalImg = obj.image_url;
+                        finalEmoji = '👾'; // 重置为默认表情
                     }
 
                     newData.push({
@@ -675,7 +680,7 @@
                 </div>
             `).join('') + (newData.length > 5 ? `<div style="padding:5px; color:#666;">...还有 ${newData.length - 5} 条</div>` : '');
 
-            if (newData.length === 0) { showToast('未识别到有效数据，请检查表头是否为: name, cost, element, category, emoji'); return; }
+            if (newData.length === 0) { showToast('未识别到有效数据，请检查表头是否为: name, cost, element, category, image_url'); return; }
 
             // 执行导入
             if (confirm(`确认导入 ${newData.length} 条数据到数据库？\n(将覆盖同名精灵或新增)`)) {
