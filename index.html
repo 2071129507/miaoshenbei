@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>妙神杯官方网站</title>
-    <!-- 引入 Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <!-- 引入 html2canvas 用于截图 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -21,105 +19,53 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
 
-        /* ===== 导航栏 - 标题居中 ===== */
-        .navbar {
-            background: var(--primary); color: white;
-            padding: 0.8rem 2rem;
-            display: flex; flex-direction: column; align-items: center;
-            position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        .navbar { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; flex-direction: column; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .navbar h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.5rem; }
         .nav-links { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
-        .nav-links a, .nav-btn {
-            color: white; text-decoration: none; font-weight: 500;
-            cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 6px;
-            transition: background 0.2s; background: transparent; border: none; font-size: 0.9rem;
-        }
+        .nav-links a, .nav-btn { color: white; text-decoration: none; font-weight: 500; cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 6px; transition: background 0.2s; background: transparent; border: none; font-size: 0.9rem; }
         .nav-links a:hover, .nav-links a.active, .nav-btn:hover { background: rgba(255,255,255,0.2); }
-        .admin-btn {
-            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
-            padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; color: white;
-        }
+        .admin-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; color: white; }
 
-        /* ===== 公告栏 - 半透明白色背景 ===== */
-        #announcement-wrapper {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(200,200,200,0.4);
-            display: none;
-            position: relative;
-        }
-        .editor-toolbar {
-            background: rgba(255,255,255,0.9); padding: 8px 20px;
-            border-bottom: 1px solid rgba(200,200,200,0.3);
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
-        .tool-btn {
-            background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px;
-            padding: 4px 8px; cursor: pointer; font-size: 14px; color: #374151; min-width: 30px; text-align: center;
-        }
+        #announcement-wrapper { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(200,200,200,0.4); display: none; position: relative; }
+        .editor-toolbar { background: rgba(255,255,255,0.9); padding: 8px 20px; border-bottom: 1px solid rgba(200,200,200,0.3); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .tool-btn { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 14px; color: #374151; min-width: 30px; text-align: center; }
         .tool-btn:hover { background: #e5e7eb; }
         input[type="color"] { width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; }
-        #announcement-content {
-            max-width: 1200px; margin: 0 auto; padding: 20px; outline: none;
-            font-size: 1rem; color: #374151; min-height: 60px;
-        }
-        #announcement-content[contenteditable="true"] {
-            border: 2px dashed #818cf8; background: rgba(255,255,255,0.6);
-            border-radius: 8px; margin: 10px 20px;
-        }
-        #announcement-content img {
-            max-height: 200px; border-radius: 4px; margin: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); vertical-align: middle;
-        }
-        .save-status {
-            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-            background: #10b981; color: white; padding: 5px 10px; border-radius: 4px;
-            font-size: 0.8rem; display: none; z-index: 10;
-        }
+        #announcement-content { max-width: 1200px; margin: 0 auto; padding: 20px; outline: none; font-size: 1rem; color: #374151; min-height: 60px; }
+        #announcement-content[contenteditable="true"] { border: 2px dashed #818cf8; background: rgba(255,255,255,0.6); border-radius: 8px; margin: 10px 20px; }
+        #announcement-content img { max-height: 200px; border-radius: 4px; margin: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); vertical-align: middle; }
+        .save-status { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: #10b981; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; display: none; z-index: 10; }
 
-        /* ===== 主内容区 ===== */
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 120px; }
         .section { display: none; }
         .section.active { display: block; }
 
-        /* ===== 搜索与筛选栏 ===== */
-        .filters {
-            background: var(--card-bg); padding: 1.2rem 1.5rem; border-radius: 12px;
-            margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
-        }
-        .search-box {
-            flex: 1; min-width: 200px; position: relative;
-        }
-        .search-box input {
-            width: 100%; padding: 0.5rem 0.8rem 0.5rem 2.2rem;
-            border: 1px solid var(--border); border-radius: 8px;
-            font-size: 0.95rem; outline: none; transition: border-color 0.2s;
-        }
+        .filters { background: var(--card-bg); padding: 1.2rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem; }
+        .search-box { position: relative; }
+        .search-box input { width: 100%; padding: 0.5rem 0.8rem 0.5rem 2.2rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
         .search-box input:focus { border-color: var(--primary); }
-        .search-box::before {
-            content: "🔍"; position: absolute; left: 0.6rem; top: 50%;
-            transform: translateY(-50%); font-size: 0.9rem; pointer-events: none;
+        .search-box::before { content: "🔍"; position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; pointer-events: none; }
+        
+        .filter-section-title { font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 8px; display: block; }
+        .filter-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        
+        /* 通用按钮样式 */
+        .filter-btn { 
+            padding: 0.4rem 0.9rem; 
+            border: 1px solid var(--border); 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            cursor: pointer; 
+            background: white; 
+            color: var(--text); 
+            transition: all 0.2s; 
+            font-weight: 500; 
         }
-        .filter-group { display: flex; align-items: center; gap: 0.5rem; }
-        .filter-group label { font-weight: 600; font-size: 0.85rem; color: var(--text-light); white-space: nowrap; }
-        .filter-group select {
-            padding: 0.45rem 0.6rem; border: 1px solid var(--border);
-            border-radius: 6px; background: white; min-width: 80px; font-size: 0.9rem;
-        }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3); }
 
-        /* ===== 精灵网格 ===== */
         .spirit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.2rem; }
-        .spirit-card {
-            background: var(--card-bg); border-radius: 12px; overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer; position: relative; border: 2px solid transparent;
-        }
+        .spirit-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; position: relative; border: 2px solid transparent; }
         .spirit-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .spirit-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
         .spirit-img { height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative; overflow: hidden; }
@@ -133,87 +79,88 @@
         .element-tag { padding: 0.15rem 0.5rem; border-radius: 20px; color: white; font-size: 0.75rem; cursor: pointer; }
         .category-tag { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; cursor: pointer; }
 
-        /* ===== 底部购物车 ===== */
-        .cart-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; border-top: 1px solid var(--border);
-            padding: 0.8rem 1.5rem;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-            z-index: 99;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); z-index: 99; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .cart-bar.visible { transform: translateY(0); }
         .cart-left { display: flex; flex-direction: column; gap: 0.4rem; max-width: 60%; }
         .cart-summary { display: flex; gap: 1.5rem; align-items: center; font-size: 1rem; }
         .cart-total { font-weight: 700; color: var(--primary); }
         .cart-items-preview { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 4px; }
-        .cart-item-chip {
-            background: #f3f4f6; border: 1px solid #e5e7eb;
-            padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;
-            display: flex; align-items: center; gap: 4px; white-space: nowrap;
-        }
+        .cart-item-chip { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .cart-item-chip span { cursor: pointer; color: #ef4444; font-weight: bold; }
         .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.9rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #e5e7eb; color: var(--text); }
         .btn-success { background: #10b981; color: white; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
 
-        /* ===== Toast ===== */
         .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 0.8rem 1.2rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-size: 0.9rem; }
         .toast.show { opacity: 1; }
 
-        /* ===== 导入模态框 ===== */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .import-area { width: 100%; height: 200px; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.9rem; resize: vertical; margin: 1rem 0; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .import-area { width: 100%; height: 250px; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.9rem; resize: vertical; margin: 1rem 0; }
         .import-area:focus { border-color: var(--primary); outline: none; }
 
-        /* ===== 图片预览弹窗（手机端长按保存） ===== */
-        .preview-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 300;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px;
-        }
+        .preview-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .preview-overlay.active { display: flex; }
         .preview-overlay .preview-tip { color: #fbbf24; font-size: 0.95rem; margin-bottom: 12px; text-align: center; }
-        .preview-overlay img {
-            max-width: 95%; max-height: 70vh;
-            border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
+        .preview-overlay img { max-width: 95%; max-height: 70vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
         .preview-overlay .preview-actions { margin-top: 16px; display: flex; gap: 12px; }
 
-        /* ===== 我的阵容 - 一图流卡片 ===== */
-        .team-lineup-card {
-            background: white; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem;
-            border: 1px solid var(--border);
-        }
-        .team-lineup-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid var(--border);
-        }
-        .team-lineup-header .team-title { font-weight: 700; font-size: 1rem; }
+        .team-lineup-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem; border: 1px solid var(--border); }
+        .team-lineup-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+        .team-lineup-header .team-title { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .team-lineup-header .team-title .editable-name { background: rgba(79, 70, 229, 0.1); border-radius: 4px; padding: 2px 6px; outline: none; border: 1px dashed transparent; min-width: 50px; }
+        .team-lineup-header .team-title .editable-name:focus { border-color: var(--primary); background: white; }
         .team-lineup-header .team-actions { display: flex; gap: 8px; }
-        .team-lineup-header .team-actions button {
-            padding: 4px 12px; border: none; border-radius: 6px;
-            font-size: 0.8rem; cursor: pointer; font-weight: 600;
-        }
-        
-        /* 隐藏渲染区 */
-        #offscreen-render {
-            position: fixed; left: -9999px; top: 0; z-index: -1;
-            pointer-events: none;
-        }
+        .team-lineup-header .team-actions button { padding: 4px 12px; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+        .magic-badge { background: #ec4899; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
 
-        /* 空状态 */
+        /* 阵容内精灵编辑样式 */
+        .lineup-spirit-item { position: relative; }
+        .edit-spirit-btn {
+            position: absolute; top: 5px; right: 5px;
+            background: rgba(0,0,0,0.6); color: white;
+            border: none; border-radius: 50%; width: 24px; height: 24px;
+            font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s; z-index: 10;
+        }
+        .lineup-spirit-item:hover .edit-spirit-btn { opacity: 1; }
+
+        #offscreen-render { position: fixed; left: -9999px; top: 0; z-index: -1; pointer-events: none; }
         .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
         .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
 
-        /* ===== 响应式 ===== */
+        /* 修正模态框样式 */
+        .fix-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f9fafb; border-radius: 8px; }
+        .fix-row label { font-weight: 600; min-width: 80px; }
+        /* 使用 searchable-select 替代普通 select */
+        .searchable-select-container { position: relative; flex: 1; }
+        .searchable-input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+        .searchable-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid var(--border); border-top: none;
+            max-height: 200px; overflow-y: auto; z-index: 50;
+            display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .searchable-option { padding: 8px; cursor: pointer; font-size: 0.9rem; }
+        .searchable-option:hover { background: #f3f4f6; }
+        .searchable-option.selected { background: var(--primary); color: white; }
+
+        /* 更换精灵模态框内的网格 */
+        .replace-modal-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+            max-height: 400px; overflow-y: auto; padding: 10px 0;
+        }
+        .replace-spirit-card {
+            border: 1px solid var(--border); border-radius: 8px; padding: 8px;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .replace-spirit-card:hover { border-color: var(--primary); background: #f0f9ff; }
+        .replace-spirit-card img { width: 100%; height: 80px; object-fit: contain; }
+        .replace-spirit-name { font-size: 0.85rem; font-weight: 600; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         @media (max-width: 768px) {
             .navbar { padding: 0.6rem 1rem; }
             .navbar h1 { font-size: 1.2rem; }
@@ -224,25 +171,21 @@
             .cart-bar { flex-direction: column; gap: 0.8rem; padding: 0.8rem 1rem; }
             .cart-left { max-width: 100%; }
             .filters { padding: 1rem; }
-            .search-box { min-width: 100%; }
             .spirit-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 导航栏 -->
     <nav class="navbar">
         <h1>🏆 妙神杯官方网站</h1>
         <div class="nav-links">
             <a class="active" onclick="switchSection('spirits', this)">精灵库</a>
             <a onclick="switchSection('my-team', this)">我的阵容</a>
-            <button class="nav-btn" onclick="openImportModal()">⚡ 快速导入</button>
             <button class="admin-btn" onclick="checkAdminPassword()">🔑 管理公告</button>
         </div>
     </nav>
 
-    <!-- 公告栏 -->
     <div id="announcement-wrapper">
         <div class="editor-toolbar" id="editor-toolbar" style="display:none;">
             <button class="tool-btn" onclick="formatDoc('bold')" title="加粗"><b>B</b></button>
@@ -263,50 +206,42 @@
     </div>
 
     <div class="container">
-        <!-- 精灵库 -->
         <div id="spirits" class="section active">
             <div class="filters">
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="搜索精灵名字、属性、种类、费用..." oninput="renderSpirits()">
                 </div>
-                <div class="filter-group">
-                    <label>属性:</label>
-                    <select id="filterElement" onchange="renderSpirits()">
-                        <option value="all">全部</option>
-                    </select>
+                
+                <div>
+                    <span class="filter-section-title">属性筛选 (最多选2个):</span>
+                    <div class="filter-buttons" id="elementButtons"></div>
                 </div>
-                <div class="filter-group">
-                    <label>费用:</label>
-                    <select id="filterCost" onchange="renderSpirits()">
-                        <option value="all">全部</option>
-                        <option value="1">1费</option>
-                        <option value="2">2费</option>
-                        <option value="3">3费</option>
-                        <option value="4">4费</option>
-                        <option value="5">5费</option>
-                    </select>
+
+                <div>
+                    <span class="filter-section-title">费用筛选 (单选):</span>
+                    <div class="filter-buttons" id="costButtons"></div>
                 </div>
-                <div class="filter-group">
-                    <label>种类:</label>
-                    <select id="filterCategory" onchange="renderSpirits()">
-                        <option value="all">全部</option>
-                    </select>
+
+                <div>
+                    <span class="filter-section-title">种类筛选 (单选):</span>
+                    <div class="filter-buttons" id="categoryButtons"></div>
                 </div>
             </div>
             <div class="spirit-grid" id="spiritGrid"></div>
         </div>
 
-        <!-- 我的阵容 -->
         <div id="my-team" class="section">
-            <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <span>📋 我的阵容</span>
-                <button class="btn btn-danger" onclick="clearMyTeam()" style="font-size: 0.85rem; padding: 0.4rem 1rem;">清空全部</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="openLineupModal()" style="font-size: 0.85rem; padding: 0.4rem 1rem;">📥 上传阵容码</button>
+                    <button class="btn btn-danger" onclick="clearMyTeam()" style="font-size: 0.85rem; padding: 0.4rem 1rem;">清空全部</button>
+                </div>
             </h2>
             <div id="myTeamList"></div>
         </div>
     </div>
 
-    <!-- 底部购物车 -->
     <div class="cart-bar" id="cartBar">
         <div class="cart-left">
             <div class="cart-summary">
@@ -321,23 +256,45 @@
         </div>
     </div>
 
-    <!-- 导入模态框 -->
-    <div id="importModal" class="modal-overlay">
+    <!-- 阵容码上传模态框 -->
+    <div id="lineupModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-bottom: 1rem;">⚡ 快速导入精灵数据</h3>
+            <h3 style="margin-bottom: 1rem;">📥 上传官方阵容码</h3>
             <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">
-                请从 Excel/WPS 复制数据粘贴到下方。<br>
-                <b>必须包含表头：</b> name, cost, element, category, image_url
+                请将游戏内复制的完整阵容码粘贴到下方。<br>
+                <span style="color: #ef4444;">注意：如果名字与数据库不完全一致，请在下方手动选择正确精灵。</span>
             </p>
-            <textarea id="importData" class="import-area" placeholder="name&#9;cost&#9;element&#9;category&#9;image_url&#10;烈焰龙&#9;3&#9;火&#9;攻击&#9;https://...&#10;水流龟&#9;2&#9;水&#9;防御&#9;https://..."></textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
-                <button class="btn btn-primary" onclick="processImport()">开始导入</button>
+            <textarea id="lineupData" class="import-area" placeholder="### 我地刺刺刺&#10;# 魔法：进化之力&#10;#&#10;# 帅帅魔偶：地系血脉..."></textarea>
+            
+            <!-- 动态生成的修正区域 -->
+            <div id="lineupFixArea" style="display:none; margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                <h4 style="margin-bottom: 0.5rem;">请确认以下精灵：</h4>
+                <div id="fixListContainer"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-secondary" onclick="closeLineupModal()">取消</button>
+                <button class="btn btn-primary" onclick="startLineupParse()">解析阵容</button>
             </div>
         </div>
     </div>
 
-    <!-- 图片预览弹窗 -->
+    <!-- 单个精灵更换模态框 (新版：带搜索和网格) -->
+    <div id="replaceModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <h3 style="margin-bottom: 1rem;">🔄 更换精灵</h3>
+            <div class="search-box" style="margin-bottom: 1rem;">
+                <input type="text" id="replaceSearchInput" placeholder="搜索要替换成的精灵..." oninput="renderReplaceGrid()">
+            </div>
+            <div class="replace-modal-grid" id="replaceGrid">
+                <!-- 动态填充 -->
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-secondary" onclick="closeReplaceModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
     <div class="preview-overlay" id="previewOverlay">
         <p class="preview-tip">👇 长按图片可保存到相册</p>
         <img id="previewImage" src="" alt="阵容一图流">
@@ -347,14 +304,10 @@
         </div>
     </div>
 
-    <!-- 离屏渲染区 -->
     <div id="offscreen-render"></div>
-
-    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        // ================= Supabase 配置 =================
         const SUPABASE_URL = 'https://zzrqxbsyawacgayzyybd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cnF4YnN5YXdhY2dheXp5eWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Njk2MTksImV4cCI6MjEwMjU0NTYxOX0.R20kzDRAp5xL_7nNTe0HNM4wz1HMtn2HZO1m0gsC4qk';
 
@@ -364,22 +317,36 @@
 
         const defaultElementColors = {
             '火': '#ef4444', '水': '#3b82f6', '草': '#22c55e', '雷': '#eab308', '电': '#eab308',
-            '光': '#f59e0b', '暗': '#6b7280', '普通': '#9ca3af'
+            '光': '#f59e0b', '暗': '#6b7280', '普通': '#9ca3af', '地': '#d97706', '风': '#10b981',
+            '冰': '#06b6d4', '毒': '#8b5cf6', '武': '#f43f5e', '法': '#3b82f6', '龙': '#6366f1',
+            '圣': '#fbbf24', '冥': '#4b5563', '超': '#ec4899'
         };
-        function getElementColor(element) { return defaultElementColors[element] || '#9ca3af'; }
+        function getElementColor(element) { 
+            const mainEl = element ? element.split('/')[0].trim() : '';
+            return defaultElementColors[mainEl] || '#9ca3af'; 
+        }
 
-        // ================= 状态 =================
         let spiritsData = [];
         let currentCart = [];
         let myTeams = JSON.parse(localStorage.getItem('myTeams') || '[]');
         let currentPreviewDataUrl = '';
         let currentPreviewFilename = 'lineup';
 
-        // ================= 初始化 =================
+        // 筛选状态
+        let selectedElements = [];
+        let selectedCost = null;
+        let selectedCategory = null;
+
+        // 临时变量用于阵容修正
+        let tempParsedTeam = null;
+        let tempUnmatchedSpirits = [];
+        let currentEditingTeamId = null;
+        let currentEditingSpiritIndex = null;
+
         window.onload = async function() {
             initSupabase();
             await loadSpiritsFromDB();
-            updateFilters();
+            renderFilterButtons();
             renderSpirits();
             renderMyTeam();
             fetchAnnouncement();
@@ -391,7 +358,6 @@
             }
         }
 
-        // ================= 设备判断 =================
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
@@ -465,7 +431,7 @@
             }, 1000);
         }
 
-        // ================= 数据加载 =================
+        // ================= 数据加载与筛选UI =================
         async function loadSpiritsFromDB() {
             if (!supabaseClient) return;
             try {
@@ -474,21 +440,60 @@
             } catch (err) { console.error(err); }
         }
 
-        function updateFilters() {
-            const attrSel = document.getElementById('filterElement');
-            const catSel = document.getElementById('filterCategory');
-            const els = [...new Set(spiritsData.map(s => s.element).filter(Boolean))];
-            const cats = [...new Set(spiritsData.map(s => s.category).filter(Boolean))];
-            attrSel.innerHTML = '<option value="all">全部</option>' + els.map(e => `<option value="${e}">${e}</option>`).join('');
-            catSel.innerHTML = '<option value="all">全部</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        function renderFilterButtons() {
+            // 1. 属性按钮
+            const elContainer = document.getElementById('elementButtons');
+            const allElements = new Set();
+            spiritsData.forEach(s => {
+                if (s.element) s.element.split('/').forEach(el => allElements.add(el.trim()));
+            });
+            const sortedElements = Array.from(allElements).sort();
+            elContainer.innerHTML = sortedElements.map(el => 
+                `<button class="filter-btn ${selectedElements.includes(el) ? 'active' : ''}" onclick="toggleElementFilter('${el}')">${el}</button>`
+            ).join('');
+
+            // 2. 费用按钮
+            const costContainer = document.getElementById('costButtons');
+            const costs = ['1', '2', '3', '4', '5'];
+            costContainer.innerHTML = costs.map(c => 
+                `<button class="filter-btn ${selectedCost === c ? 'active' : ''}" onclick="setCostFilter('${c}')">${c}费</button>`
+            ).join('') + `<button class="filter-btn ${selectedCost === null ? 'active' : ''}" onclick="setCostFilter(null)">全部</button>`;
+
+            // 3. 种类按钮
+            const catContainer = document.getElementById('categoryButtons');
+            const cats = [...new Set(spiritsData.map(s => s.category).filter(Boolean))].sort();
+            catContainer.innerHTML = cats.map(c => 
+                `<button class="filter-btn ${selectedCategory === c ? 'active' : ''}" onclick="setCategoryFilter('${c}')">${c}</button>`
+            ).join('') + `<button class="filter-btn ${selectedCategory === null ? 'active' : ''}" onclick="setCategoryFilter(null)">全部</button>`;
+        }
+
+        function toggleElementFilter(el) {
+            const idx = selectedElements.indexOf(el);
+            if (idx > -1) {
+                selectedElements.splice(idx, 1);
+            } else {
+                if (selectedElements.length >= 2) selectedElements.shift();
+                selectedElements.push(el);
+            }
+            renderFilterButtons();
+            renderSpirits();
+        }
+
+        function setCostFilter(val) {
+            selectedCost = val;
+            renderFilterButtons();
+            renderSpirits();
+        }
+
+        function setCategoryFilter(val) {
+            selectedCategory = val;
+            renderFilterButtons();
+            renderSpirits();
         }
 
         // ================= 搜索 + 筛选 + 渲染 =================
         function renderSpirits() {
             const grid = document.getElementById('spiritGrid');
-            const fEl = document.getElementById('filterElement').value;
-            const fCost = document.getElementById('filterCost').value;
-            const fCat = document.getElementById('filterCategory').value;
             const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
 
             const filtered = spiritsData.filter(s => {
@@ -499,9 +504,12 @@
                         || (s.cost && s.cost.toString().includes(query));
                     if (!hit) return false;
                 }
-                if (fEl !== 'all' && s.element !== fEl) return false;
-                if (fCost !== 'all' && parseInt(s.cost) !== parseInt(fCost)) return false;
-                if (fCat !== 'all' && s.category !== fCat) return false;
+                if (selectedElements.length > 0) {
+                    const spiritEls = s.element ? s.element.split('/').map(e => e.trim()) : [];
+                    if (!selectedElements.some(sel => spiritEls.includes(sel))) return false;
+                }
+                if (selectedCost !== null && parseInt(s.cost) !== parseInt(selectedCost)) return false;
+                if (selectedCategory !== null && s.category !== selectedCategory) return false;
                 return true;
             });
 
@@ -526,18 +534,13 @@
                         <div class="spirit-info">
                             <div class="spirit-name">${s.name}</div>
                             <div class="spirit-meta">
-                                <span class="element-tag" style="background:${color}" onclick="event.stopPropagation(); quickFilter('filterElement','${s.element}')">${s.element || '未知'}</span>
-                                <span class="cost-badge" onclick="event.stopPropagation(); quickFilter('filterCost','${s.cost}')">${s.cost}费</span>
-                                <span class="category-tag" onclick="event.stopPropagation(); quickFilter('filterCategory','${s.category}')">${s.category || '通用'}</span>
+                                <span class="element-tag" style="background:${color}" onclick="event.stopPropagation(); toggleElementFilter('${s.element.split('/')[0].trim()}')">${s.element || '未知'}</span>
+                                <span class="cost-badge" onclick="event.stopPropagation(); setCostFilter('${s.cost}')">${s.cost}费</span>
+                                <span class="category-tag" onclick="event.stopPropagation(); setCategoryFilter('${s.category}')">${s.category || '通用'}</span>
                             </div>
                         </div>
                     </div>`;
             }).join('');
-        }
-
-        function quickFilter(selectId, value) {
-            document.getElementById(selectId).value = value;
-            renderSpirits();
         }
 
         // ================= 购物车 =================
@@ -554,7 +557,7 @@
         function updateCartUI() {
             const bar = document.getElementById('cartBar');
             document.getElementById('cartCount').textContent = currentCart.length;
-            document.getElementById('cartCost').textContent = currentCart.reduce((s, c) => s + parseInt(c.cost), 0);
+            document.getElementById('cartCost').textContent = currentCart.reduce((s, c) => s + parseInt(c.cost || 0), 0);
             document.getElementById('cartItemsPreview').innerHTML = currentCart.map(s =>
                 `<div class="cart-item-chip">${s.name} <span onclick="event.stopPropagation(); removeFromCart(${s.id})">❌</span></div>`
             ).join('');
@@ -567,47 +570,228 @@
             if (currentCart.length === 0) { showToast('请先选择精灵！'); return; }
             myTeams.push({
                 id: Date.now(),
+                name: '未命名阵容',
+                magic: '无',
                 spirits: [...currentCart],
-                totalCost: currentCart.reduce((s, c) => s + parseInt(c.cost), 0)
+                totalCost: currentCart.reduce((s, c) => s + parseInt(c.cost || 0), 0)
             });
             localStorage.setItem('myTeams', JSON.stringify(myTeams));
             clearCart(); renderMyTeam();
             showToast('✅ 已保存至"我的阵容"');
         }
 
-        // ================= 我的阵容 - 一图流渲染 =================
-        function renderMyTeam() {
-            const list = document.getElementById('myTeamList');
-            if (myTeams.length === 0) {
-                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>暂无阵容，去精灵库选择精灵吧！</p></div>';
+        // ================= 阵容码解析与修正 =================
+        function openLineupModal() { 
+            document.getElementById('lineupModal').style.display = 'flex'; 
+            document.getElementById('lineupFixArea').style.display = 'none';
+            document.getElementById('lineupData').value = '';
+        }
+        function closeLineupModal() { document.getElementById('lineupModal').style.display = 'none'; }
+
+        function startLineupParse() {
+            const rawText = document.getElementById('lineupData').value.trim();
+            if (!rawText) { showToast('请先粘贴阵容码！'); return; }
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
+            let name = '未命名阵容';
+            let magic = '无';
+            let spiritNames = [];
+
+            for (let line of lines) {
+                if (line.startsWith('###')) {
+                    name = line.replace('###', '').trim();
+                } else if (line.match(/^#\s*魔法[：:]/)) {
+                    magic = line.replace(/^#\s*魔法[：:]\s*/, '').trim();
+                } else if (line.startsWith('# ') && line.includes('血脉')) {
+                    const match = line.match(/^#\s*(.+?)[：:]\s*.+血脉/);
+                    if (match) spiritNames.push(match[1].trim());
+                }
+            }
+
+            if (spiritNames.length === 0) {
+                showToast('❌ 未解析到精灵数据，请检查格式');
                 return;
             }
-            list.innerHTML = myTeams.map((team, i) => {
-                const cardId = 'lineup-card-' + team.id;
+
+            // 尝试匹配
+            const matchedSpirits = [];
+            const unmatchedIndices = [];
+            
+            spiritNames.forEach((sName, index) => {
+                // 精确匹配
+                let dbSpirit = spiritsData.find(s => s.name === sName);
+                // 模糊匹配 (如果数据库名字包含输入名字，或者输入名字包含数据库名字)
+                if (!dbSpirit) {
+                    dbSpirit = spiritsData.find(s => s.name.includes(sName) || sName.includes(s.name));
+                }
+                
+                if (dbSpirit) {
+                    matchedSpirits[index] = dbSpirit;
+                } else {
+                    unmatchedIndices.push(index);
+                    // 占位符，等待用户选择
+                    matchedSpirits[index] = { name: sName, cost: 0, element: '未知', category: '未知', image_url: '', isPlaceholder: true, originalName: sName };
+                }
+            });
+
+            if (unmatchedIndices.length > 0) {
+                // 需要手动修正
+                tempParsedTeam = { name, magic, spirits: matchedSpirits };
+                tempUnmatchedSpirits = unmatchedIndices.map(idx => ({
+                    index: idx,
+                    originalName: spiritNames[idx]
+                }));
+                showFixModalInLineup();
+            } else {
+                // 全部匹配成功，直接保存
+                saveParsedTeam(name, magic, matchedSpirits);
+                closeLineupModal();
+            }
+        }
+
+        // 在导入弹窗内显示修正列表
+        function showFixModalInLineup() {
+            const container = document.getElementById('fixListContainer');
+            const fixArea = document.getElementById('lineupFixArea');
+            fixArea.style.display = 'block';
+            
+            container.innerHTML = tempUnmatchedSpirits.map(item => {
                 return `
-                <div class="team-lineup-card">
-                    <div class="team-lineup-header">
-                        <span class="team-title">阵容 ${i + 1}（总费用：${team.totalCost}）</span>
-                        <div class="team-actions">
-                            <button class="btn-success" style="background:#10b981;color:white;" onclick="saveLineupAsImage('${cardId}', '阵容${i+1}')">📸 保存图</button>
-                            <button style="background:#ef4444;color:white;" onclick="deleteTeam(${team.id})">🗑️ 删除</button>
+                <div class="fix-row">
+                    <label>${item.originalName}</label>
+                    <div class="searchable-select-container">
+                        <input type="text" class="searchable-input" placeholder="搜索精灵..." 
+                               oninput="filterSearchableOptions(this, ${item.index})"
+                               onfocus="showSearchableOptions(this, ${item.index})"
+                               onblur="hideSearchableOptionsDelayed(this)"
+                               data-index="${item.index}">
+                        <div class="searchable-dropdown" id="dropdown-${item.index}">
+                            ${spiritsData.map(s => `<div class="searchable-option" onclick="selectFixSpirit(${item.index}, '${s.id}', '${s.name}')">${s.name} (${s.element}/${s.cost}费)</div>`).join('')}
                         </div>
-                    </div>
-                    <div id="${cardId}">
-                        ${buildLineupHTML(team.spirits, team.totalCost)}
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function buildLineupHTML(spirits, totalCost) {
-            const breakdown = spirits.map(s => `${s.name}(${s.cost}费)`).join(' + ');
+        // 可搜索下拉框逻辑
+        function filterSearchableOptions(input, index) {
+            const val = input.value.toLowerCase();
+            const dropdown = document.getElementById(`dropdown-${index}`);
+            const options = dropdown.querySelectorAll('.searchable-option');
+            options.forEach(opt => {
+                if (opt.innerText.toLowerCase().includes(val)) {
+                    opt.style.display = 'block';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+            dropdown.style.display = 'block';
+        }
+
+        function showSearchableOptions(input, index) {
+            const dropdown = document.getElementById(`dropdown-${index}`);
+            dropdown.style.display = 'block';
+            // Reset filter
+            const options = dropdown.querySelectorAll('.searchable-option');
+            options.forEach(opt => opt.style.display = 'block');
+        }
+
+        function hideSearchableOptionsDelayed(input) {
+            setTimeout(() => {
+                const dropdown = input.nextElementSibling;
+                if (dropdown) dropdown.style.display = 'none';
+            }, 200);
+        }
+
+        function selectFixSpirit(index, spiritId, spiritName) {
+            const dbSpirit = spiritsData.find(s => s.id == spiritId);
+            if (dbSpirit) {
+                tempParsedTeam.spirits[index] = dbSpirit;
+                // Update input display
+                const input = document.querySelector(`input[data-index="${index}"]`);
+                if (input) {
+                    input.value = spiritName;
+                    input.style.borderColor = '#10b981';
+                    input.style.backgroundColor = '#ecfdf5';
+                }
+            }
+        }
+
+        function confirmFixAndSave() {
+            // Check if all placeholders are resolved
+            const unresolved = tempParsedTeam.spirits.some(s => s.isPlaceholder);
+            if (unresolved) {
+                showToast('请为所有未识别的精灵选择对应项！');
+                return;
+            }
+
+            saveParsedTeam(tempParsedTeam.name, tempParsedTeam.magic, tempParsedTeam.spirits);
+            closeLineupModal();
+        }
+
+        function saveParsedTeam(name, magic, spirits) {
+            const totalCost = spirits.reduce((s, c) => s + parseInt(c.cost || 0), 0);
+            myTeams.push({
+                id: Date.now(),
+                name: name,
+                magic: magic,
+                spirits: spirits,
+                totalCost: totalCost
+            });
+            localStorage.setItem('myTeams', JSON.stringify(myTeams));
+            renderMyTeam();
+            showToast(`✅ 阵容【${name}】已保存！`);
+        }
+
+        // ================= 我的阵容 - 渲染与编辑 =================
+        function renderMyTeam() {
+            const list = document.getElementById('myTeamList');
+            if (myTeams.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>暂无阵容，去精灵库选择或上传阵容码吧！</p></div>';
+                return;
+            }
+            list.innerHTML = myTeams.map((team, i) => {
+                const cardId = 'lineup-card-' + team.id;
+                const teamName = team.name || '未命名阵容';
+                const teamMagic = team.magic || '无';
+                return `
+                <div class="team-lineup-card">
+                    <div class="team-lineup-header">
+                        <span class="team-title">
+                            <span class="editable-name" contenteditable="true" onblur="updateTeamName(${team.id}, this.innerText)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${teamName}</span>
+                            <span class="magic-badge">魔法：${teamMagic}</span>
+                        </span>
+                        <div class="team-actions">
+                            <button class="btn-success" style="background:#10b981;color:white;" onclick="saveLineupAsImage('${cardId}', '${teamName}')">📸 保存图</button>
+                            <button style="background:#ef4444;color:white;" onclick="deleteTeam(${team.id})">🗑️ 删除</button>
+                        </div>
+                    </div>
+                    <div id="${cardId}">
+                        ${buildLineupHTML(team.spirits, team.totalCost, teamName, teamMagic, team.id)}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateTeamName(teamId, newName) {
+            const team = myTeams.find(t => t.id === teamId);
+            if (team) {
+                team.name = newName.trim() || '未命名阵容';
+                localStorage.setItem('myTeams', JSON.stringify(myTeams));
+            }
+        }
+
+        // 修复后的 buildLineupHTML：确保立绘和信息直接显示
+        function buildLineupHTML(spirits, totalCost, teamName, teamMagic, teamId) {
+            const breakdown = spirits.map(s => `${s.name}(${s.cost || 0}费)`).join(' + ');
             let itemsHTML = '';
-            spirits.forEach(s => {
+            spirits.forEach((s, index) => {
                 const color = getElementColor(s.element);
                 const imgSrc = s.image_url || '';
+                // 移除 hover 依赖，直接渲染图片和信息
                 itemsHTML += `
-                <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 14px;">
+                <div class="lineup-spirit-item" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 14px;">
+                    <button class="edit-spirit-btn" onclick="openReplaceModal(${teamId}, ${index})" title="更换精灵">🔄</button>
                     ${imgSrc
                         ? `<img src="${imgSrc}" style="width:72px;height:72px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,0.1);flex-shrink:0;border:2px solid rgba(255,255,255,0.25);" crossorigin="anonymous" onerror="this.outerHTML='<div style=\\'width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:2px solid rgba(255,255,255,0.25);\\'>👾</div>'">`
                         : `<div style="width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:2px solid rgba(255,255,255,0.25);">👾</div>`
@@ -616,7 +800,7 @@
                         <div style="font-size:16px;font-weight:700;margin-bottom:6px;">${s.name}</div>
                         <div style="display:flex;gap:5px;flex-wrap:wrap;">
                             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${color};color:white;">${s.element || '未知'}</span>
-                            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.3);color:white;">${s.cost}费</span>
+                            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.3);color:white;">${s.cost || 0}费</span>
                             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.2);color:white;">${s.category || '通用'}</span>
                         </div>
                     </div>
@@ -625,7 +809,8 @@
 
             return `
             <div style="width:100%;padding:28px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-                <div style="text-align:center;font-size:22px;font-weight:800;margin-bottom:20px;letter-spacing:2px;">⚔️ 我的精灵阵容</div>
+                <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:6px;letter-spacing:2px;">${teamName}</div>
+                <div style="text-align:center;font-size:14px;margin-bottom:20px;opacity:0.9;">携带魔法：${teamMagic}</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="lineup-inner-grid">
                     ${itemsHTML}
                 </div>
@@ -634,6 +819,74 @@
                     <div style="font-size:13px;opacity:0.85;margin-top:6px;">费用构成：${breakdown}</div>
                 </div>
             </div>`;
+        }
+
+        // ================= 单个精灵更换逻辑 (新版) =================
+        function openReplaceModal(teamId, spiritIndex) {
+            currentEditingTeamId = teamId;
+            currentEditingSpiritIndex = spiritIndex;
+            
+            // 重置搜索框
+            document.getElementById('replaceSearchInput').value = '';
+            
+            // 初始渲染网格
+            renderReplaceGrid();
+            
+            document.getElementById('replaceModal').style.display = 'flex';
+        }
+
+        function closeReplaceModal() {
+            document.getElementById('replaceModal').style.display = 'none';
+            currentEditingTeamId = null;
+            currentEditingSpiritIndex = null;
+        }
+
+        function renderReplaceGrid() {
+            const grid = document.getElementById('replaceGrid');
+            const query = (document.getElementById('replaceSearchInput').value || '').trim().toLowerCase();
+            
+            const filtered = spiritsData.filter(s => {
+                if (!query) return true;
+                return (s.name && s.name.toLowerCase().includes(query))
+                    || (s.element && s.element.toLowerCase().includes(query));
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#999;padding:20px;">未找到精灵</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(s => {
+                const imgUrl = s.image_url;
+                const color = getElementColor(s.element);
+                let imgContent = imgUrl 
+                    ? `<img src="${imgUrl}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMiAydjIwTTEyIDIybDgtOE0xMiAyMmwtOC04Ii8+PC9zdmc+'">` 
+                    : `<div style="width:100%;height:80px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:4px;">👾</div>`;
+                
+                return `
+                <div class="replace-spirit-card" onclick="confirmReplaceWithId('${s.id}')">
+                    ${imgContent}
+                    <div class="replace-spirit-name">${s.name}</div>
+                    <div style="font-size:0.75rem;color:#666;">${s.element} | ${s.cost}费</div>
+                </div>`;
+            }).join('');
+        }
+
+        function confirmReplaceWithId(newSpiritId) {
+            const newSpirit = spiritsData.find(s => s.id == newSpiritId);
+            
+            if (newSpirit && currentEditingTeamId) {
+                const team = myTeams.find(t => t.id === currentEditingTeamId);
+                if (team) {
+                    team.spirits[currentEditingSpiritIndex] = newSpirit;
+                    // 重新计算总费用
+                    team.totalCost = team.spirits.reduce((s, c) => s + parseInt(c.cost || 0), 0);
+                    localStorage.setItem('myTeams', JSON.stringify(myTeams));
+                    renderMyTeam();
+                    showToast('✅ 精灵已更换');
+                    closeReplaceModal();
+                }
+            }
         }
 
         function deleteTeam(id) {
@@ -651,54 +904,25 @@
         async function saveLineupAsImage(elementId, filename) {
             const el = document.getElementById(elementId);
             if (!el) { showToast('找不到阵容元素'); return; }
-
             showToast('🔄 正在生成图片...');
-
             try {
-                // 等待图片加载
                 await waitForImages(el);
-
-                const canvas = await html2canvas(el, {
-                    useCORS: true,
-                    allowTaint: true,
-                    scale: 2,
-                    backgroundColor: null,
-                    logging: false
-                });
-
-                // 转换为 Blob 以提高下载稳定性
+                const canvas = await html2canvas(el, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: null, logging: false });
                 canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        showToast('❌ 生成图片数据失败');
-                        return;
-                    }
-                    
+                    if (!blob) { showToast('❌ 生成图片数据失败'); return; }
                     if (isMobileDevice()) {
-                        // 手机端：显示预览
                         const reader = new FileReader();
-                        reader.onloadend = function() {
-                            showPreview(reader.result, filename);
-                        };
+                        reader.onloadend = function() { showPreview(reader.result, filename); };
                         reader.readAsDataURL(blob);
                     } else {
-                        // 电脑端：直接下载
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
-                        link.href = url;
-                        link.download = filename + '.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        
-                        // 清理
-                        setTimeout(() => {
-                            document.body.removeChild(link);
-                            URL.revokeObjectURL(url);
-                        }, 100);
-                        
+                        link.href = url; link.download = filename + '.png';
+                        document.body.appendChild(link); link.click();
+                        setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 100);
                         showToast('✅ 图片已开始下载');
                     }
                 }, 'image/png');
-
             } catch (err) {
                 console.error('生成图片失败:', err);
                 showToast('❌ 生成失败: ' + err.message);
@@ -724,74 +948,16 @@
             document.getElementById('previewImage').src = dataUrl;
             document.getElementById('previewOverlay').classList.add('active');
         }
-
         function closePreview() {
             document.getElementById('previewOverlay').classList.remove('active');
             currentPreviewDataUrl = '';
         }
-
         function downloadPreviewImage() {
             if (!currentPreviewDataUrl) return;
-            
-            // 手机端预览时也支持点击下载
             const link = document.createElement('a');
-            link.href = currentPreviewDataUrl;
-            link.download = currentPreviewFilename + '.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
+            link.href = currentPreviewDataUrl; link.download = currentPreviewFilename + '.png';
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
             showToast('✅ 图片已尝试下载');
-        }
-
-        // ================= 导入 =================
-        function openImportModal() { document.getElementById('importModal').style.display = 'flex'; }
-        function closeImportModal() { document.getElementById('importModal').style.display = 'none'; }
-
-        async function processImport() {
-            const rawText = document.getElementById('importData').value.trim();
-            if (!rawText) { showToast('请先粘贴数据！'); return; }
-            if (!supabaseClient) { showToast('数据库未连接'); return; }
-
-            const lines = rawText.split('\n');
-            if (lines.length < 2) { showToast('数据格式错误'); return; }
-
-            const headers = lines[0].split(/\t+/).map(h => h.trim().toLowerCase());
-            const required = ['name', 'cost', 'element', 'category', 'image_url'];
-            const missing = required.filter(f => !headers.includes(f));
-            if (missing.length > 0) { showToast('缺少列: ' + missing.join(', ')); return; }
-
-            const records = [];
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                const vals = line.split(/\t+/);
-                if (vals.length < headers.length) continue;
-                const rec = {};
-                headers.forEach((h, idx) => {
-                    let v = vals[idx];
-                    if (h === 'cost') v = parseInt(v) || 0;
-                    rec[h] = v;
-                });
-                if (rec.name && rec.cost) records.push(rec);
-            }
-            if (records.length === 0) { showToast('未解析到有效数据'); return; }
-
-            const btn = document.querySelector('#importModal .btn-primary');
-            const orig = btn.innerText; btn.innerText = '导入中...'; btn.disabled = true;
-            try {
-                const { error } = await supabaseClient.from('spirits').insert(records);
-                if (error) throw error;
-                showToast(`✅ 成功导入 ${records.length} 条！`);
-                closeImportModal();
-                document.getElementById('importData').value = '';
-                await loadSpiritsFromDB();
-                updateFilters(); renderSpirits();
-            } catch (err) {
-                showToast('导入失败: ' + err.message);
-            } finally {
-                btn.innerText = orig; btn.disabled = false;
-            }
         }
 
         // ================= 工具 =================
@@ -801,7 +967,6 @@
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
             if (el) el.classList.add('active');
         }
-
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.textContent = msg; t.classList.add('show');
@@ -810,6 +975,3 @@
     </script>
 </body>
 </html>
-
-
-
