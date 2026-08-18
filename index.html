@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>精灵对战比赛专用网站</title>
+    <title>妙神杯官方网站</title>
     <!-- 引入 Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- 引入 html2canvas 用于截图 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -15,30 +17,45 @@
             --text: #1f2937;
             --text-light: #6b7280;
             --border: #e5e7eb;
-            --success: #10b981;
-            --danger: #ef4444;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-        
-        /* 导航栏 */
-        .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .navbar h1 { font-size: 1.5rem; }
-        .nav-links { display: flex; gap: 1.5rem; align-items: center; }
-        .nav-links a { color: white; text-decoration: none; font-weight: 500; cursor: pointer; padding: 0.5rem 1rem; border-radius: 6px; transition: background 0.2s; }
-        .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
-        .admin-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; color: white; }
 
-        /* 超级公告栏容器 */
+        /* ===== 导航栏 - 标题居中 ===== */
+        .navbar {
+            background: var(--primary); color: white;
+            padding: 0.8rem 2rem;
+            display: flex; flex-direction: column; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.5rem; }
+        .nav-links { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .nav-links a, .nav-btn {
+            color: white; text-decoration: none; font-weight: 500;
+            cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 6px;
+            transition: background 0.2s; background: transparent; border: none; font-size: 0.9rem;
+        }
+        .nav-links a:hover, .nav-links a.active, .nav-btn:hover { background: rgba(255,255,255,0.2); }
+        .admin-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; color: white;
+        }
+
+        /* ===== 公告栏 - 半透明白色背景 ===== */
         #announcement-wrapper {
-            background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-            border-bottom: 1px solid #fecdd3;
-            display: none; 
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(200,200,200,0.4);
+            display: none;
             position: relative;
         }
         .editor-toolbar {
-            background: white; padding: 8px 20px; border-bottom: 1px solid #fecdd3;
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.9); padding: 8px 20px;
+            border-bottom: 1px solid rgba(200,200,200,0.3);
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         }
         .tool-btn {
             background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px;
@@ -46,13 +63,12 @@
         }
         .tool-btn:hover { background: #e5e7eb; }
         input[type="color"] { width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; }
-        
         #announcement-content {
             max-width: 1200px; margin: 0 auto; padding: 20px; outline: none;
-            font-size: 1rem; color: #881337; min-height: 60px;
+            font-size: 1rem; color: #374151; min-height: 60px;
         }
         #announcement-content[contenteditable="true"] {
-            border: 2px dashed #fb7185; background: rgba(255,255,255,0.5);
+            border: 2px dashed #818cf8; background: rgba(255,255,255,0.6);
             border-radius: 8px; margin: 10px 20px;
         }
         #announcement-content img {
@@ -65,138 +81,168 @@
             font-size: 0.8rem; display: none; z-index: 10;
         }
 
-        /* 主内容区 */
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 100px; }
+        /* ===== 主内容区 ===== */
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 120px; }
         .section { display: none; }
         .section.active { display: block; }
 
-        /* 筛选栏 */
-        .filters { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        /* ===== 搜索与筛选栏 ===== */
+        .filters {
+            background: var(--card-bg); padding: 1.2rem 1.5rem; border-radius: 12px;
+            margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+        }
+        .search-box {
+            flex: 1; min-width: 200px; position: relative;
+        }
+        .search-box input {
+            width: 100%; padding: 0.5rem 0.8rem 0.5rem 2.2rem;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+        }
+        .search-box input:focus { border-color: var(--primary); }
+        .search-box::before {
+            content: "🔍"; position: absolute; left: 0.6rem; top: 50%;
+            transform: translateY(-50%); font-size: 0.9rem; pointer-events: none;
+        }
         .filter-group { display: flex; align-items: center; gap: 0.5rem; }
-        .filter-group label { font-weight: 600; font-size: 0.9rem; color: var(--text-light); }
-        .filter-group select { padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: white; min-width: 100px; }
+        .filter-group label { font-weight: 600; font-size: 0.85rem; color: var(--text-light); white-space: nowrap; }
+        .filter-group select {
+            padding: 0.45rem 0.6rem; border: 1px solid var(--border);
+            border-radius: 6px; background: white; min-width: 80px; font-size: 0.9rem;
+        }
 
-        /* 精灵网格 */
-        .spirit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; }
-        .spirit-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; position: relative; border: 2px solid transparent; }
+        /* ===== 精灵网格 ===== */
+        .spirit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.2rem; }
+        .spirit-card {
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer; position: relative; border: 2px solid transparent;
+        }
         .spirit-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .spirit-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
-        
-        .spirit-img { height: 160px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative; overflow: hidden; }
+        .spirit-img { height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative; overflow: hidden; }
         .spirit-img img { width: 100%; height: 100%; object-fit: contain; padding: 10px; transition: transform 0.3s; }
         .spirit-card:hover .spirit-img img { transform: scale(1.05); }
-        .spirit-img .fallback-emoji { font-size: 4rem; }
+        .spirit-img .placeholder-icon { font-size: 3.5rem; opacity: 0.3; }
+        .spirit-info { padding: 0.8rem; }
+        .spirit-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.4rem; text-align: center; }
+        .spirit-meta { display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 0.75rem; flex-wrap: wrap; }
+        .cost-badge { background: var(--primary); color: white; padding: 0.15rem 0.5rem; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .element-tag { padding: 0.15rem 0.5rem; border-radius: 20px; color: white; font-size: 0.75rem; cursor: pointer; }
+        .category-tag { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; cursor: pointer; }
 
-        .spirit-info { padding: 1rem; }
-        .spirit-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; text-align: center; }
-        
-        /* 标签容器 */
-        .spirit-meta { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 6px; 
-            font-size: 0.8rem; 
-            flex-wrap: wrap;
-        }
-        
-        /* 可点击的标签样式 */
-        .cost-badge { 
-            background: var(--primary); color: white; padding: 0.2rem 0.6rem; 
-            border-radius: 20px; font-weight: bold; cursor: pointer; 
-            transition: background 0.2s;
-        }
-        .cost-badge:hover { background: var(--primary-light); }
-        
-        .element-tag { 
-            padding: 0.2rem 0.6rem; border-radius: 20px; color: white; 
-            font-size: 0.8rem; cursor: pointer; 
-            transition: opacity 0.2s;
-        }
-        .element-tag:hover { opacity: 0.8; }
-
-        /* 种类标签样式 */
-        .category-tag {
-            background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db;
-            padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .category-tag:hover {
-            background: #e5e7eb; border-color: #9ca3af; color: #1f2937;
-        }
-
-        /* 底部悬浮购物车 */
-        .cart-bar { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: white; border-top: 1px solid var(--border); 
-            padding: 1rem 2rem; 
-            display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.1); 
-            z-index: 99; 
-            transform: translateY(100%); 
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        /* ===== 底部购物车 ===== */
+        .cart-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid var(--border);
+            padding: 0.8rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            z-index: 99;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .cart-bar.visible { transform: translateY(0); }
-        
-        .cart-left { display: flex; flex-direction: column; gap: 0.5rem; max-width: 60%; }
-        .cart-summary { display: flex; gap: 2rem; align-items: center; font-size: 1.1rem; }
+        .cart-left { display: flex; flex-direction: column; gap: 0.4rem; max-width: 60%; }
+        .cart-summary { display: flex; gap: 1.5rem; align-items: center; font-size: 1rem; }
         .cart-total { font-weight: 700; color: var(--primary); }
-        
-        .cart-items-preview {
-            display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px;
-            scrollbar-width: thin;
-        }
+        .cart-items-preview { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 4px; }
         .cart-item-chip {
             background: #f3f4f6; border: 1px solid #e5e7eb;
-            padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;
-            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+            padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 4px; white-space: nowrap;
         }
-        .cart-item-chip span { cursor: pointer; color: #ef4444; font-weight: bold; margin-left: 2px; }
-        .cart-item-chip span:hover { background: #fee2e2; border-radius: 50%; }
-
-        .btn { padding: 0.6rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .cart-item-chip span { cursor: pointer; color: #ef4444; font-weight: bold; }
+        .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.9rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #e5e7eb; color: var(--text); }
-        
-        /* Toast 提示 */
-        .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .btn-success { background: #10b981; color: white; }
+
+        /* ===== Toast ===== */
+        .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 0.8rem 1.2rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-size: 0.9rem; }
         .toast.show { opacity: 1; }
 
-        /* 管理员导入面板样式 */
-        .admin-panel {
-            background: white; border: 2px solid var(--primary); border-radius: 12px;
-            padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        /* ===== 导入模态框 ===== */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .import-area { width: 100%; height: 200px; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.9rem; resize: vertical; margin: 1rem 0; }
+        .import-area:focus { border-color: var(--primary); outline: none; }
+
+        /* ===== 图片预览弹窗（手机端长按保存） ===== */
+        .preview-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 300;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px;
         }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .import-area { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .import-input { width: 100%; height: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; resize: vertical; }
-        .import-preview { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
-        .preview-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 4px 0; }
+        .preview-overlay.active { display: flex; }
+        .preview-overlay .preview-tip { color: #fbbf24; font-size: 0.95rem; margin-bottom: 12px; text-align: center; }
+        .preview-overlay img {
+            max-width: 95%; max-height: 70vh;
+            border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .preview-overlay .preview-actions { margin-top: 16px; display: flex; gap: 12px; }
+
+        /* ===== 我的阵容 - 一图流卡片 ===== */
+        .team-lineup-card {
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+        .team-lineup-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid var(--border);
+        }
+        .team-lineup-header .team-title { font-weight: 700; font-size: 1rem; }
+        .team-lineup-header .team-actions { display: flex; gap: 8px; }
+        .team-lineup-header .team-actions button {
+            padding: 4px 12px; border: none; border-radius: 6px;
+            font-size: 0.8rem; cursor: pointer; font-weight: 600;
+        }
         
+        /* 隐藏渲染区 */
+        #offscreen-render {
+            position: fixed; left: -9999px; top: 0; z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
+        .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        /* ===== 响应式 ===== */
         @media (max-width: 768px) {
-            .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
-            .nav-links { width: 100%; justify-content: center; }
-            .container { padding: 1rem; }
+            .navbar { padding: 0.6rem 1rem; }
+            .navbar h1 { font-size: 1.2rem; }
+            .nav-links { gap: 0.5rem; }
+            .nav-links a, .nav-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+            .container { padding: 1rem; padding-bottom: 120px; }
             .editor-toolbar { justify-content: center; }
-            .cart-bar { flex-direction: column; gap: 1rem; padding: 1rem; }
+            .cart-bar { flex-direction: column; gap: 0.8rem; padding: 0.8rem 1rem; }
             .cart-left { max-width: 100%; }
-            .import-area { grid-template-columns: 1fr; }
+            .filters { padding: 1rem; }
+            .search-box { min-width: 100%; }
+            .spirit-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
         }
     </style>
 </head>
 <body>
 
+    <!-- 导航栏 -->
     <nav class="navbar">
-        <h1>🏆 精灵对战比赛系统</h1>
+        <h1>🏆 妙神杯官方网站</h1>
         <div class="nav-links">
             <a class="active" onclick="switchSection('spirits', this)">精灵库</a>
             <a onclick="switchSection('my-team', this)">我的阵容</a>
+            <button class="nav-btn" onclick="openImportModal()">⚡ 快速导入</button>
             <button class="admin-btn" onclick="checkAdminPassword()">🔑 管理公告</button>
         </div>
     </nav>
 
-    <!-- 超级公告栏区域 -->
+    <!-- 公告栏 -->
     <div id="announcement-wrapper">
         <div class="editor-toolbar" id="editor-toolbar" style="display:none;">
             <button class="tool-btn" onclick="formatDoc('bold')" title="加粗"><b>B</b></button>
@@ -217,36 +263,12 @@
     </div>
 
     <div class="container">
-        <!-- 管理员导入面板 (默认隐藏) -->
-        <div id="adminImportPanel" class="admin-panel" style="display:none;">
-            <div class="admin-header">
-                <h3>📥 批量导入精灵数据</h3>
-                <button class="btn btn-secondary" onclick="document.getElementById('adminImportPanel').style.display='none'">关闭</button>
-            </div>
-            <div class="import-area">
-                <div>
-                    <p style="margin-bottom:8px; font-size:0.9rem; color:#666;">
-                        <strong>支持格式：</strong><br>
-                        1. 直接从 Excel/WPS 复制表格内容粘贴<br>
-                        2. 粘贴 CSV 文本 (逗号分隔)<br>
-                        <span style="color:#ef4444; font-size:0.8rem;">注意：请确保第一行是表头 (name, cost, element, category, image_url)</span>
-                    </p>
-                    <textarea id="csvInput" class="import-input" placeholder="在此处粘贴你的表格数据...&#10;例如：&#10;name	cost	element	category	image_url&#10;喵喵	1	草	御三家	https://..."></textarea>
-                    <div style="margin-top:10px; display:flex; gap:10px;">
-                        <button class="btn btn-primary" onclick="parseAndImportCSV()">开始智能解析并导入</button>
-                        <button class="btn btn-secondary" onclick="downloadTemplate()">下载模板</button>
-                    </div>
-                </div>
-                <div>
-                    <p style="margin-bottom:8px; font-size:0.9rem; color:#666;">预览 (前5条):</p>
-                    <div id="importPreview" class="import-preview">等待数据...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 1. 精灵库板块 -->
+        <!-- 精灵库 -->
         <div id="spirits" class="section active">
             <div class="filters">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索精灵名字、属性、种类、费用..." oninput="renderSpirits()">
+                </div>
                 <div class="filter-group">
                     <label>属性:</label>
                     <select id="filterElement" onchange="renderSpirits()">
@@ -274,18 +296,17 @@
             <div class="spirit-grid" id="spiritGrid"></div>
         </div>
 
-        <!-- 2. 我的阵容板块 -->
+        <!-- 我的阵容 -->
         <div id="my-team" class="section">
-            <h2 style="margin-bottom: 1.5rem;">🛒 我的阵容 (本地存储)</h2>
-            <div id="myTeamList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;"></div>
-            <div style="margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="generateTeamImage()">生成阵容一图流 (PNG)</button>
-                <button class="btn btn-danger" onclick="clearMyTeam()" style="margin-left: 1rem;">清空阵容</button>
-            </div>
+            <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>📋 我的阵容</span>
+                <button class="btn btn-danger" onclick="clearMyTeam()" style="font-size: 0.85rem; padding: 0.4rem 1rem;">清空全部</button>
+            </h2>
+            <div id="myTeamList"></div>
         </div>
     </div>
 
-    <!-- 底部悬浮购物车栏 -->
+    <!-- 底部购物车 -->
     <div class="cart-bar" id="cartBar">
         <div class="cart-left">
             <div class="cart-summary">
@@ -294,55 +315,74 @@
             </div>
             <div class="cart-items-preview" id="cartItemsPreview"></div>
         </div>
-        <div>
+        <div style="display:flex; gap:0.5rem; flex-shrink:0;">
             <button class="btn btn-secondary" onclick="clearCart()">清空</button>
-            <button class="btn btn-primary" onclick="saveToMyTeam()" style="margin-left: 0.5rem;">存入阵容</button>
+            <button class="btn btn-primary" onclick="saveToMyTeam()">存入阵容</button>
         </div>
     </div>
 
-    <!-- Toast 提示 -->
+    <!-- 导入模态框 -->
+    <div id="importModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1rem;">⚡ 快速导入精灵数据</h3>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">
+                请从 Excel/WPS 复制数据粘贴到下方。<br>
+                <b>必须包含表头：</b> name, cost, element, category, image_url
+            </p>
+            <textarea id="importData" class="import-area" placeholder="name&#9;cost&#9;element&#9;category&#9;image_url&#10;烈焰龙&#9;3&#9;火&#9;攻击&#9;https://...&#10;水流龟&#9;2&#9;水&#9;防御&#9;https://..."></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+                <button class="btn btn-primary" onclick="processImport()">开始导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览弹窗 -->
+    <div class="preview-overlay" id="previewOverlay">
+        <p class="preview-tip">👇 长按图片可保存到相册</p>
+        <img id="previewImage" src="" alt="阵容一图流">
+        <div class="preview-actions">
+            <button class="btn btn-primary" onclick="downloadPreviewImage()">💾 下载图片</button>
+            <button class="btn btn-secondary" onclick="closePreview()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 离屏渲染区 -->
+    <div id="offscreen-render"></div>
+
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        // ================= 配置 Supabase =================
-        const SUPABASE_URL = 'https://zzrqxbsyawacgayzyybd.supabase.co'; 
+        // ================= Supabase 配置 =================
+        const SUPABASE_URL = 'https://zzrqxbsyawacgayzyybd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cnF4YnN5YXdhY2dheXp5eWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Njk2MTksImV4cCI6MjEwMjU0NTYxOX0.R20kzDRAp5xL_7nNTe0HNM4wz1HMtn2HZO1m0gsC4qk';
-        
+
         let supabaseClient = null;
         let isAdminMode = false;
-        const ADMIN_PASSWORD = "admin123"; 
-
-        // ================= 模拟数据 =================
-        const mockSpiritsData = [
-            { id: 1, name: '烈焰龙', cost: 3, element: '火', category: '攻击', emoji: '🐉', image_url: '' },
-            { id: 2, name: '水流龟', cost: 2, element: '水', category: '防御', emoji: '🐢', image_url: '' },
-            { id: 3, name: '雷电鼠', cost: 1, element: '雷', category: '攻击', emoji: '🐁', image_url: '' },
-            { id: 4, name: '森林鹿', cost: 2, element: '草', category: '辅助', emoji: '🦌', image_url: '' },
-            { id: 5, name: '迪莫', cost: 4, element: '光', category: '单挂精灵', emoji: '✨', image_url: '' }
-        ];
+        const ADMIN_PASSWORD = "admin123";
 
         const defaultElementColors = {
             '火': '#ef4444', '水': '#3b82f6', '草': '#22c55e', '雷': '#eab308', '电': '#eab308',
             '光': '#f59e0b', '暗': '#6b7280', '普通': '#9ca3af'
         };
+        function getElementColor(element) { return defaultElementColors[element] || '#9ca3af'; }
 
-        function getElementColor(element) {
-            return defaultElementColors[element] || '#9ca3af';
-        }
-
-        // ================= 状态管理 =================
-        let spiritsData = []; 
-        let currentCart = []; 
-        let myTeams = JSON.parse(localStorage.getItem('myTeams') || '[]'); 
+        // ================= 状态 =================
+        let spiritsData = [];
+        let currentCart = [];
+        let myTeams = JSON.parse(localStorage.getItem('myTeams') || '[]');
+        let currentPreviewDataUrl = '';
+        let currentPreviewFilename = 'lineup';
 
         // ================= 初始化 =================
         window.onload = async function() {
             initSupabase();
-            await loadSpiritsFromDB(); 
+            await loadSpiritsFromDB();
             updateFilters();
             renderSpirits();
             renderMyTeam();
-            fetchAnnouncement(); 
+            fetchAnnouncement();
         };
 
         function initSupabase() {
@@ -351,55 +391,50 @@
             }
         }
 
-        // ================= 公告栏逻辑 =================
+        // ================= 设备判断 =================
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        }
+
+        // ================= 公告栏 =================
         function checkAdminPassword() {
             if (isAdminMode) { exitAdminMode(); return; }
             const input = prompt("请输入管理员密码:");
             if (input === ADMIN_PASSWORD) enterAdminMode();
-            else if (input !== null) alert("密码错误！");
+            else if (input !== null) showToast("密码错误！");
         }
-
         function enterAdminMode() {
             isAdminMode = true;
             document.getElementById('announcement-wrapper').style.display = 'block';
             document.getElementById('editor-toolbar').style.display = 'flex';
-            document.getElementById('adminImportPanel').style.display = 'block'; // 显示导入面板
-            const contentDiv = document.getElementById('announcement-content');
-            contentDiv.contentEditable = "true";
-            contentDiv.focus();
+            const c = document.getElementById('announcement-content');
+            c.contentEditable = "true"; c.focus();
             showToast('✅ 管理员模式已开启');
         }
-
         function exitAdminMode() {
             isAdminMode = false;
-            document.getElementById('announcement-wrapper').style.display = 'none';
-            document.getElementById('adminImportPanel').style.display = 'none';
             document.getElementById('editor-toolbar').style.display = 'none';
             document.getElementById('announcement-content').contentEditable = "false";
             autoSaveAnnouncement();
             showToast('已退出编辑模式');
         }
-
-        function formatDoc(cmd, value = null) {
+        function formatDoc(cmd, value) {
             if (value) document.execCommand(cmd, false, value);
             else document.execCommand(cmd);
             document.getElementById('announcement-content').focus();
         }
-
         document.addEventListener('paste', function(e) {
             if (!isAdminMode) return;
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let index in items) {
-                const item = items[index];
-                if (item.kind === 'file') {
-                    const blob = item.getAsFile();
+                if (items[index].kind === 'file') {
+                    const blob = items[index].getAsFile();
                     const reader = new FileReader();
-                    reader.onload = function(event) { formatDoc('insertImage', event.target.result); };
+                    reader.onload = function(ev) { formatDoc('insertImage', ev.target.result); };
                     reader.readAsDataURL(blob);
                 }
             }
         });
-
         async function fetchAnnouncement() {
             if (!supabaseClient) return;
             try {
@@ -410,7 +445,6 @@
                 }
             } catch (e) { console.log("公告加载失败", e); }
         }
-
         let saveTimeout;
         function autoSaveAnnouncement() {
             if (!isAdminMode || !supabaseClient) return;
@@ -431,299 +465,347 @@
             }, 1000);
         }
 
-        // ================= 数据处理与渲染 =================
+        // ================= 数据加载 =================
         async function loadSpiritsFromDB() {
-            if (!supabaseClient) { spiritsData = mockSpiritsData; return; }
+            if (!supabaseClient) return;
             try {
                 const { data } = await supabaseClient.from('spirits').select('*');
-                spiritsData = (data && data.length > 0) ? data : mockSpiritsData;
-            } catch (err) { spiritsData = mockSpiritsData; }
+                if (data && data.length > 0) spiritsData = data;
+            } catch (err) { console.error(err); }
         }
 
         function updateFilters() {
-            const attrSelect = document.getElementById('filterElement');
-            const catSelect = document.getElementById('filterCategory');
-            const uniqueElements = [...new Set(spiritsData.map(s => s.element).filter(Boolean))];
-            const uniqueCategories = [...new Set(spiritsData.map(s => s.category).filter(Boolean))];
-            
-            attrSelect.innerHTML = '<option value="all">全部</option>' + uniqueElements.map(el => `<option value="${el}">${el}</option>`).join('');
-            catSelect.innerHTML = '<option value="all">全部</option>' + uniqueCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            const attrSel = document.getElementById('filterElement');
+            const catSel = document.getElementById('filterCategory');
+            const els = [...new Set(spiritsData.map(s => s.element).filter(Boolean))];
+            const cats = [...new Set(spiritsData.map(s => s.category).filter(Boolean))];
+            attrSel.innerHTML = '<option value="all">全部</option>' + els.map(e => `<option value="${e}">${e}</option>`).join('');
+            catSel.innerHTML = '<option value="all">全部</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
+        // ================= 搜索 + 筛选 + 渲染 =================
         function renderSpirits() {
             const grid = document.getElementById('spiritGrid');
-            const fElement = document.getElementById('filterElement').value;
+            const fEl = document.getElementById('filterElement').value;
             const fCost = document.getElementById('filterCost').value;
-            const fCategory = document.getElementById('filterCategory').value;
+            const fCat = document.getElementById('filterCategory').value;
+            const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
 
             const filtered = spiritsData.filter(s => {
-                if (fElement !== 'all' && s.element !== fElement) return false;
+                if (query) {
+                    const hit = (s.name && s.name.toLowerCase().includes(query))
+                        || (s.element && s.element.toLowerCase().includes(query))
+                        || (s.category && s.category.toLowerCase().includes(query))
+                        || (s.cost && s.cost.toString().includes(query));
+                    if (!hit) return false;
+                }
+                if (fEl !== 'all' && s.element !== fEl) return false;
                 if (fCost !== 'all' && parseInt(s.cost) !== parseInt(fCost)) return false;
-                if (fCategory !== 'all' && s.category !== fCategory) return false;
+                if (fCat !== 'all' && s.category !== fCat) return false;
                 return true;
             });
 
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🔍</div><p>没有找到匹配的精灵</p></div>';
+                return;
+            }
+
             grid.innerHTML = filtered.map(s => {
-                // 【核心修改】严格优先使用 image_url 字段
-                const imgUrl = s.image_url; 
-                
-                // 如果没有 image_url，才尝试使用 emoji (如果是链接的话) 或者显示默认表情
-                const displayEmoji = s.emoji && !s.emoji.startsWith('http') ? s.emoji : '👾';
-                
-                let imgContent = '';
-                if (imgUrl) {
-                    // 如果有图片链接，显示图片
-                    imgContent = `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                 <div class="fallback-emoji" style="display:none;">${displayEmoji}</div>`;
-                } else {
-                    // 否则只显示表情
-                    imgContent = `<div class="fallback-emoji">${displayEmoji}</div>`;
-                }
-
+                const imgUrl = s.image_url;
                 const color = getElementColor(s.element);
-
+                const inCart = currentCart.find(c => c.id === s.id);
+                let imgContent;
+                if (imgUrl) {
+                    imgContent = `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div class="placeholder-icon" style="display:none;">👾</div>`;
+                } else {
+                    imgContent = `<div class="placeholder-icon">👾</div>`;
+                }
                 return `
-                    <div class="spirit-card ${currentCart.find(c => c.id === s.id) ? 'selected' : ''}" onclick="toggleCart(${s.id})">
-                        <div class="spirit-img" style="background: ${color}15;">${imgContent}</div>
+                    <div class="spirit-card ${inCart ? 'selected' : ''}" onclick="toggleCart(${s.id})">
+                        <div class="spirit-img" style="background:${color}15;">${imgContent}</div>
                         <div class="spirit-info">
                             <div class="spirit-name">${s.name}</div>
                             <div class="spirit-meta">
-                                <span class="element-tag" style="background: ${color}" onclick="event.stopPropagation(); filterByElement('${s.element}')">${s.element || '未知'}</span>
-                                <span class="cost-badge" onclick="event.stopPropagation(); filterByCost(${s.cost})">${s.cost}费</span>
-                                <span class="category-tag" onclick="event.stopPropagation(); filterByCategory('${s.category}')">${s.category || '通用'}</span>
+                                <span class="element-tag" style="background:${color}" onclick="event.stopPropagation(); quickFilter('filterElement','${s.element}')">${s.element || '未知'}</span>
+                                <span class="cost-badge" onclick="event.stopPropagation(); quickFilter('filterCost','${s.cost}')">${s.cost}费</span>
+                                <span class="category-tag" onclick="event.stopPropagation(); quickFilter('filterCategory','${s.category}')">${s.category || '通用'}</span>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
-        function filterByElement(el) {
-            document.getElementById('filterElement').value = el;
+        function quickFilter(selectId, value) {
+            document.getElementById(selectId).value = value;
             renderSpirits();
-            showToast(`已筛选属性: ${el}`);
         }
 
-        function filterByCost(cost) {
-            document.getElementById('filterCost').value = cost;
-            renderSpirits();
-            showToast(`已筛选费用: ${cost}费`);
-        }
-
-        function filterByCategory(cat) {
-            document.getElementById('filterCategory').value = cat;
-            renderSpirits();
-            showToast(`已筛选种类: ${cat}`);
-        }
-
-        // ================= 购物车与阵容逻辑 =================
+        // ================= 购物车 =================
         function toggleCart(id) {
             const spirit = spiritsData.find(s => s.id === id);
-            const index = currentCart.findIndex(c => c.id === id);
-            
-            if (index > -1) {
-                currentCart.splice(index, 1);
-            } else {
-                if (currentCart.length >= 6) { showToast('最多6只！'); return; }
+            const idx = currentCart.findIndex(c => c.id === id);
+            if (idx > -1) { currentCart.splice(idx, 1); }
+            else {
+                if (currentCart.length >= 6) { showToast('最多选择6只精灵！'); return; }
                 currentCart.push(spirit);
             }
-            updateCartUI();
-            renderSpirits();
+            updateCartUI(); renderSpirits();
         }
-
         function updateCartUI() {
             const bar = document.getElementById('cartBar');
-            const countEl = document.getElementById('cartCount');
-            const costEl = document.getElementById('cartCost');
-            const previewEl = document.getElementById('cartItemsPreview');
-            
-            countEl.textContent = currentCart.length;
-            costEl.textContent = currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0);
-            
-            previewEl.innerHTML = currentCart.map(s => `
-                <div class="cart-item-chip">
-                    ${s.name} 
-                    <span onclick="event.stopPropagation(); removeFromCart(${s.id})" title="移除">❌</span>
-                </div>
-            `).join('');
-
+            document.getElementById('cartCount').textContent = currentCart.length;
+            document.getElementById('cartCost').textContent = currentCart.reduce((s, c) => s + parseInt(c.cost), 0);
+            document.getElementById('cartItemsPreview').innerHTML = currentCart.map(s =>
+                `<div class="cart-item-chip">${s.name} <span onclick="event.stopPropagation(); removeFromCart(${s.id})">❌</span></div>`
+            ).join('');
             currentCart.length > 0 ? bar.classList.add('visible') : bar.classList.remove('visible');
         }
-
-        function removeFromCart(id) {
-            currentCart = currentCart.filter(c => c.id !== id);
-            updateCartUI();
-            renderSpirits();
-        }
-
+        function removeFromCart(id) { currentCart = currentCart.filter(c => c.id !== id); updateCartUI(); renderSpirits(); }
         function clearCart() { currentCart = []; updateCartUI(); renderSpirits(); }
 
         function saveToMyTeam() {
-            if (currentCart.length === 0) return;
+            if (currentCart.length === 0) { showToast('请先选择精灵！'); return; }
             myTeams.push({
                 id: Date.now(),
                 spirits: [...currentCart],
-                totalCost: currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0)
+                totalCost: currentCart.reduce((s, c) => s + parseInt(c.cost), 0)
             });
             localStorage.setItem('myTeams', JSON.stringify(myTeams));
-            clearCart();
-            renderMyTeam();
-            showToast('已保存至“我的阵容”');
+            clearCart(); renderMyTeam();
+            showToast('✅ 已保存至"我的阵容"');
         }
 
+        // ================= 我的阵容 - 一图流渲染 =================
         function renderMyTeam() {
             const list = document.getElementById('myTeamList');
-            if (myTeams.length === 0) { list.innerHTML = '<p style="color:#999; grid-column:1/-1; text-align:center;">暂无阵容</p>'; return; }
-            list.innerHTML = myTeams.map((team, i) => `
-                <div style="background:white; padding:1rem; border-radius:8px; border:1px solid #eee;">
-                    <div style="font-weight:bold;">阵容 ${i+1} (总费:${team.totalCost})</div>
-                    <div style="font-size:0.8rem; color:#666; margin-top:5px;">
-                        ${team.spirits.map(s => s.name).join(', ')}
+            if (myTeams.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>暂无阵容，去精灵库选择精灵吧！</p></div>';
+                return;
+            }
+            list.innerHTML = myTeams.map((team, i) => {
+                const cardId = 'lineup-card-' + team.id;
+                return `
+                <div class="team-lineup-card">
+                    <div class="team-lineup-header">
+                        <span class="team-title">阵容 ${i + 1}（总费用：${team.totalCost}）</span>
+                        <div class="team-actions">
+                            <button class="btn-success" style="background:#10b981;color:white;" onclick="saveLineupAsImage('${cardId}', '阵容${i+1}')">📸 保存图</button>
+                            <button style="background:#ef4444;color:white;" onclick="deleteTeam(${team.id})">🗑️ 删除</button>
+                        </div>
                     </div>
-                    <button onclick="deleteTeam(${team.id})" style="color:red; border:none; background:none; cursor:pointer; margin-top:5px;">删除</button>
+                    <div id="${cardId}">
+                        ${buildLineupHTML(team.spirits, team.totalCost)}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function buildLineupHTML(spirits, totalCost) {
+            const breakdown = spirits.map(s => `${s.name}(${s.cost}费)`).join(' + ');
+            let itemsHTML = '';
+            spirits.forEach(s => {
+                const color = getElementColor(s.element);
+                const imgSrc = s.image_url || '';
+                itemsHTML += `
+                <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 14px;">
+                    ${imgSrc
+                        ? `<img src="${imgSrc}" style="width:72px;height:72px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,0.1);flex-shrink:0;border:2px solid rgba(255,255,255,0.25);" crossorigin="anonymous" onerror="this.outerHTML='<div style=\\'width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:2px solid rgba(255,255,255,0.25);\\'>👾</div>'">`
+                        : `<div style="width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:2px solid rgba(255,255,255,0.25);">👾</div>`
+                    }
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:16px;font-weight:700;margin-bottom:6px;">${s.name}</div>
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${color};color:white;">${s.element || '未知'}</span>
+                            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.3);color:white;">${s.cost}费</span>
+                            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.2);color:white;">${s.category || '通用'}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            return `
+            <div style="width:100%;padding:28px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <div style="text-align:center;font-size:22px;font-weight:800;margin-bottom:20px;letter-spacing:2px;">⚔️ 我的精灵阵容</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="lineup-inner-grid">
+                    ${itemsHTML}
                 </div>
-            `).join('');
+                <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:2px solid rgba(255,255,255,0.25);">
+                    <div style="font-size:20px;font-weight:800;">阵容总费用：${totalCost}</div>
+                    <div style="font-size:13px;opacity:0.85;margin-top:6px;">费用构成：${breakdown}</div>
+                </div>
+            </div>`;
         }
 
         function deleteTeam(id) {
+            if (!confirm('确定删除这个阵容？')) return;
             myTeams = myTeams.filter(t => t.id !== id);
             localStorage.setItem('myTeams', JSON.stringify(myTeams));
             renderMyTeam();
         }
-
         function clearMyTeam() {
-            if(confirm('确定清空所有本地阵容？')) { 
-                myTeams = []; localStorage.setItem('myTeams', '[]'); renderMyTeam(); 
+            if (!confirm('确定清空所有阵容？')) return;
+            myTeams = []; localStorage.setItem('myTeams', '[]'); renderMyTeam();
+        }
+
+        // ================= 一图流生成 & 保存 =================
+        async function saveLineupAsImage(elementId, filename) {
+            const el = document.getElementById(elementId);
+            if (!el) { showToast('找不到阵容元素'); return; }
+
+            showToast('🔄 正在生成图片...');
+
+            try {
+                // 等待图片加载
+                await waitForImages(el);
+
+                const canvas = await html2canvas(el, {
+                    useCORS: true,
+                    allowTaint: true,
+                    scale: 2,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                // 转换为 Blob 以提高下载稳定性
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        showToast('❌ 生成图片数据失败');
+                        return;
+                    }
+                    
+                    if (isMobileDevice()) {
+                        // 手机端：显示预览
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            showPreview(reader.result, filename);
+                        };
+                        reader.readAsDataURL(blob);
+                    } else {
+                        // 电脑端：直接下载
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename + '.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // 清理
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        }, 100);
+                        
+                        showToast('✅ 图片已开始下载');
+                    }
+                }, 'image/png');
+
+            } catch (err) {
+                console.error('生成图片失败:', err);
+                showToast('❌ 生成失败: ' + err.message);
             }
         }
 
-        function generateTeamImage() {
-            showToast('一图流生成功能正在开发中...');
+        async function waitForImages(container) {
+            const imgs = container.querySelectorAll('img');
+            const promises = Array.from(imgs).map(img => {
+                return new Promise(resolve => {
+                    if (img.complete && img.naturalWidth > 0) { resolve(); return; }
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                    if (!img.src || img.src === '') resolve();
+                });
+            });
+            return Promise.all(promises);
         }
 
-        // ================= 批量导入逻辑 (严格 Image URL 版) =================
-        function downloadTemplate() {
-            // 【核心修改】模板表头改为 image_url
-            const csvContent = "name,cost,element,category,image_url\n新精灵,3,火,攻击,https://example.com/img.png\n测试精灵,1,水,防御,https://example.com/img2.png";
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "spirit_import_template.csv");
-            link.style.visibility = 'hidden';
+        function showPreview(dataUrl, filename) {
+            currentPreviewDataUrl = dataUrl;
+            currentPreviewFilename = filename;
+            document.getElementById('previewImage').src = dataUrl;
+            document.getElementById('previewOverlay').classList.add('active');
+        }
+
+        function closePreview() {
+            document.getElementById('previewOverlay').classList.remove('active');
+            currentPreviewDataUrl = '';
+        }
+
+        function downloadPreviewImage() {
+            if (!currentPreviewDataUrl) return;
+            
+            // 手机端预览时也支持点击下载
+            const link = document.createElement('a');
+            link.href = currentPreviewDataUrl;
+            link.download = currentPreviewFilename + '.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            showToast('✅ 图片已尝试下载');
         }
 
-        function parseAndImportCSV() {
-            const input = document.getElementById('csvInput').value.trim();
-            if (!input) { showToast('请先粘贴数据'); return; }
+        // ================= 导入 =================
+        function openImportModal() { document.getElementById('importModal').style.display = 'flex'; }
+        function closeImportModal() { document.getElementById('importModal').style.display = 'none'; }
 
-            const lines = input.split('\n');
-            if (lines.length < 2) { showToast('数据行数不足，请检查'); return; }
+        async function processImport() {
+            const rawText = document.getElementById('importData').value.trim();
+            if (!rawText) { showToast('请先粘贴数据！'); return; }
+            if (!supabaseClient) { showToast('数据库未连接'); return; }
 
-            // 智能检测分隔符：如果第一行包含 Tab，则使用 Tab，否则使用逗号
-            const firstLine = lines[0];
-            const separator = firstLine.includes('\t') ? '\t' : ',';
-            
-            console.log(`检测到分隔符: ${separator === '\t' ? 'Tab (Excel格式)' : 'Comma (CSV格式)'}`);
+            const lines = rawText.split('\n');
+            if (lines.length < 2) { showToast('数据格式错误'); return; }
 
-            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase());
-            const newData = [];
+            const headers = lines[0].split(/\t+/).map(h => h.trim().toLowerCase());
+            const required = ['name', 'cost', 'element', 'category', 'image_url'];
+            const missing = required.filter(f => !headers.includes(f));
+            if (missing.length > 0) { showToast('缺少列: ' + missing.join(', ')); return; }
 
-            // 简单解析
+            const records = [];
             for (let i = 1; i < lines.length; i++) {
-                const currentline = lines[i].split(separator);
-                if (currentline.length < 2) continue;
-                
-                const obj = {};
-                headers.forEach((header, index) => {
-                    // 保留原始值，不要过度 trim，以防链接出错，但去掉首尾空格
-                    let val = currentline[index];
-                    if (val) val = val.trim();
-                    obj[header] = val;
+                const line = lines[i].trim();
+                if (!line) continue;
+                const vals = line.split(/\t+/);
+                if (vals.length < headers.length) continue;
+                const rec = {};
+                headers.forEach((h, idx) => {
+                    let v = vals[idx];
+                    if (h === 'cost') v = parseInt(v) || 0;
+                    rec[h] = v;
                 });
-                
-                // 【核心修改】数据清洗与映射：严格使用 image_url
-                if (obj.name) {
-                    let finalImg = null;
-                    let finalEmoji = obj.emoji || '👾';
-
-                    // 1. 优先检查是否有专门的 image_url 列
-                    if (obj.image_url && obj.image_url.trim() !== '') {
-                        finalImg = obj.image_url.trim();
-                    } 
-                    // 2. 如果没有 image_url 列，但 emoji 列看起来像个链接（兼容旧数据）
-                    else if (finalEmoji && finalEmoji.startsWith('http')) {
-                        finalImg = finalEmoji;
-                        finalEmoji = '👾'; // 重置为默认表情
-                    }
-
-                    newData.push({
-                        name: obj.name,
-                        cost: parseInt(obj.cost) || 1,
-                        element: obj.element || '普通',
-                        category: obj.category || '通用',
-                        emoji: finalEmoji,
-                        image_url: finalImg // 存入数据库的 image_url 字段
-                    });
-                }
+                if (rec.name && rec.cost) records.push(rec);
             }
+            if (records.length === 0) { showToast('未解析到有效数据'); return; }
 
-            // 更新预览
-            const previewDiv = document.getElementById('importPreview');
-            previewDiv.innerHTML = newData.slice(0, 5).map(item => `
-                <div class="preview-row">
-                    <span>${item.name}</span>
-                    <span>${item.cost}费 / ${item.element}</span>
-                </div>
-            `).join('') + (newData.length > 5 ? `<div style="padding:5px; color:#666;">...还有 ${newData.length - 5} 条</div>` : '');
-
-            if (newData.length === 0) { showToast('未识别到有效数据，请检查表头是否为: name, cost, element, category, image_url'); return; }
-
-            // 执行导入
-            if (confirm(`确认导入 ${newData.length} 条数据到数据库？\n(将覆盖同名精灵或新增)`)) {
-                importToSupabase(newData);
-            }
-        }
-
-        async function importToSupabase(dataArray) {
-            if (!supabaseClient) { showToast('数据库未连接，仅演示模式'); return; }
-            
-            showToast('正在导入...');
+            const btn = document.querySelector('#importModal .btn-primary');
+            const orig = btn.innerText; btn.innerText = '导入中...'; btn.disabled = true;
             try {
-                // 使用 upsert 避免重复插入，或者根据需求只 insert
-                const { error } = await supabaseClient.from('spirits').insert(dataArray);
+                const { error } = await supabaseClient.from('spirits').insert(records);
                 if (error) throw error;
-                
-                showToast(`成功导入 ${dataArray.length} 条数据！`);
-                document.getElementById('csvInput').value = '';
-                document.getElementById('importPreview').innerHTML = '导入完成';
-                
-                // 重新加载数据
+                showToast(`✅ 成功导入 ${records.length} 条！`);
+                closeImportModal();
+                document.getElementById('importData').value = '';
                 await loadSpiritsFromDB();
-                updateFilters();
-                renderSpirits();
+                updateFilters(); renderSpirits();
             } catch (err) {
-                console.error(err);
                 showToast('导入失败: ' + err.message);
+            } finally {
+                btn.innerText = orig; btn.disabled = false;
             }
         }
 
-        // ================= 工具函数 =================
-        function switchSection(sectionId, el) {
+        // ================= 工具 =================
+        function switchSection(id, el) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
+            document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-            if(el) el.classList.add('active');
+            if (el) el.classList.add('active');
         }
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
         }
     </script>
 </body>
