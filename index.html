@@ -19,36 +19,49 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
         
-        /* 公告栏 */
-        #announcement-bar {
-            display: none;
-            background: #ff6b6b;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            font-weight: bold;
-            position: relative;
-            z-index: 101;
-            font-size: 0.9rem;
-        }
-        #announcement-bar button {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
         /* 导航栏 */
         .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .navbar h1 { font-size: 1.5rem; }
-        .nav-links { display: flex; gap: 1.5rem; }
+        .nav-links { display: flex; gap: 1.5rem; align-items: center; }
         .nav-links a { color: white; text-decoration: none; font-weight: 500; cursor: pointer; padding: 0.5rem 1rem; border-radius: 6px; transition: background 0.2s; }
         .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+        .admin-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; color: white; }
+
+        /* 超级公告栏容器 */
+        #announcement-wrapper {
+            background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+            border-bottom: 1px solid #fecdd3;
+            display: none; 
+            position: relative;
+        }
+        .editor-toolbar {
+            background: white; padding: 8px 20px; border-bottom: 1px solid #fecdd3;
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tool-btn {
+            background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px;
+            padding: 4px 8px; cursor: pointer; font-size: 14px; color: #374151; min-width: 30px; text-align: center;
+        }
+        .tool-btn:hover { background: #e5e7eb; }
+        input[type="color"] { width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; }
+        
+        #announcement-content {
+            max-width: 1200px; margin: 0 auto; padding: 20px; outline: none;
+            font-size: 1rem; color: #881337; min-height: 60px;
+        }
+        #announcement-content[contenteditable="true"] {
+            border: 2px dashed #fb7185; background: rgba(255,255,255,0.5);
+            border-radius: 8px; margin: 10px 20px;
+        }
+        #announcement-content img {
+            max-height: 200px; border-radius: 4px; margin: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); vertical-align: middle;
+        }
+        .save-status {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+            background: #10b981; color: white; padding: 5px 10px; border-radius: 4px;
+            font-size: 0.8rem; display: none; z-index: 10;
+        }
 
         /* 主内容区 */
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 100px; }
@@ -67,7 +80,6 @@
         .spirit-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .spirit-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
         
-        /* 图片容器样式 */
         .spirit-img { height: 160px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative; overflow: hidden; }
         .spirit-img img { width: 100%; height: 100%; object-fit: contain; padding: 10px; transition: transform 0.3s; }
         .spirit-card:hover .spirit-img img { transform: scale(1.05); }
@@ -75,105 +87,121 @@
 
         .spirit-info { padding: 1rem; }
         .spirit-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; text-align: center; }
-        .spirit-meta { display: flex; justify-content: space-around; align-items: center; font-size: 0.85rem; color: var(--text-light); }
-        .cost-badge { background: var(--primary); color: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        .cost-badge:hover { background: var(--primary-light); }
-        .element-tag { padding: 0.2rem 0.6rem; border-radius: 20px; color: white; font-size: 0.8rem; cursor: pointer; }
         
-        /* 底部悬浮购物车 */
-        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 99; transform: translateY(100%); transition: transform 0.3s; }
+        /* 标签容器 */
+        .spirit-meta { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 6px; 
+            font-size: 0.8rem; 
+            flex-wrap: wrap;
+        }
+        
+        /* 可点击的标签样式 */
+        .cost-badge { 
+            background: var(--primary); color: white; padding: 0.2rem 0.6rem; 
+            border-radius: 20px; font-weight: bold; cursor: pointer; 
+            transition: background 0.2s;
+        }
+        .cost-badge:hover { background: var(--primary-light); }
+        
+        .element-tag { 
+            padding: 0.2rem 0.6rem; border-radius: 20px; color: white; 
+            font-size: 0.8rem; cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+        .element-tag:hover { opacity: 0.8; }
+
+        /* 新增：种类标签样式 */
+        .category-tag {
+            background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db;
+            padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .category-tag:hover {
+            background: #e5e7eb; border-color: #9ca3af; color: #1f2937;
+        }
+
+        /* 底部悬浮购物车 - 升级版 */
+        .cart-bar { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: white; border-top: 1px solid var(--border); 
+            padding: 1rem 2rem; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1); 
+            z-index: 99; 
+            transform: translateY(100%); 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
         .cart-bar.visible { transform: translateY(0); }
-        .cart-info { display: flex; gap: 2rem; align-items: center; }
-        .cart-total { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+        
+        .cart-left { display: flex; flex-direction: column; gap: 0.5rem; max-width: 60%; }
+        .cart-summary { display: flex; gap: 2rem; align-items: center; font-size: 1.1rem; }
+        .cart-total { font-weight: 700; color: var(--primary); }
+        
+        /* 购物车明细列表 */
+        .cart-items-preview {
+            display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px;
+            scrollbar-width: thin;
+        }
+        .cart-item-chip {
+            background: #f3f4f6; border: 1px solid #e5e7eb;
+            padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+        }
+        .cart-item-chip span { cursor: pointer; color: #ef4444; font-weight: bold; margin-left: 2px; }
+        .cart-item-chip span:hover { background: #fee2e2; border-radius: 50%; }
+
         .btn { padding: 0.6rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #e5e7eb; color: var(--text); }
-
-        /* 我的阵容板块 */
-        .my-team-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .team-item { background: var(--card-bg); padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
         
-        /* 阵容上传与公示板块 */
-        .upload-form { background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-        .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
-        
-        .tournament-tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .tab-btn { padding: 0.5rem 1rem; background: white; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; font-weight: 500; }
-        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
-        .public-team-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid var(--border); }
-        .team-header { display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem; flex-wrap: wrap; gap: 0.5rem;}
-        .team-spirits { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; }
-        .mini-spirit { text-align: center; padding: 0.5rem; background: var(--bg); border-radius: 8px; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;}
-        .mini-spirit img { width: 60px; height: 60px; object-fit: contain; }
-
         /* Toast 提示 */
         .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
 
-        /* 弹窗样式 (用于一图流预览) */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            max-width: 100%;
-            max-height: 90vh;
-            overflow: auto;
-            text-align: center;
-            position: relative;
-        }
-        .modal-content img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #eee;
-        }
-        .close-modal {
-            position: absolute; top: 10px; right: 15px;
-            font-size: 24px; cursor: pointer; color: #666;
-        }
-
-        /* 响应式适配 */
         @media (max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
             .nav-links { width: 100%; justify-content: center; }
             .container { padding: 1rem; }
-            .filters { flex-direction: column; align-items: flex-start; }
-            .spirit-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
-            .spirit-img { height: 120px; }
+            .editor-toolbar { justify-content: center; }
             .cart-bar { flex-direction: column; gap: 1rem; padding: 1rem; }
-            .cart-info { width: 100%; justify-content: space-between; }
+            .cart-left { max-width: 100%; }
         }
     </style>
 </head>
 <body>
-
-    <!-- 公告栏 -->
-    <div id="announcement-bar">
-        <span id="announcement-text"></span>
-        <button onclick="document.getElementById('announcement-bar').style.display='none'">✕</button>
-    </div>
 
     <nav class="navbar">
         <h1>🏆 精灵对战比赛系统</h1>
         <div class="nav-links">
             <a class="active" onclick="switchSection('spirits', this)">精灵库</a>
             <a onclick="switchSection('my-team', this)">我的阵容</a>
-            <a onclick="switchSection('tournaments', this)">比赛阵容</a>
+            <button class="admin-btn" onclick="checkAdminPassword()">🔑 管理公告</button>
         </div>
     </nav>
+
+    <!-- 超级公告栏区域 -->
+    <div id="announcement-wrapper">
+        <div class="editor-toolbar" id="editor-toolbar" style="display:none;">
+            <button class="tool-btn" onclick="formatDoc('bold')" title="加粗"><b>B</b></button>
+            <button class="tool-btn" onclick="formatDoc('italic')" title="斜体"><i>I</i></button>
+            <button class="tool-btn" onclick="formatDoc('justifyLeft')" title="左对齐">⬅️</button>
+            <button class="tool-btn" onclick="formatDoc('justifyCenter')" title="居中">↔️</button>
+            <button class="tool-btn" onclick="formatDoc('justifyRight')" title="右对齐">➡️</button>
+            <select onchange="formatDoc('fontSize', this.value)" class="tool-btn" style="width: auto;">
+                <option value="">字号</option>
+                <option value="1">小</option>
+                <option value="3">中</option>
+                <option value="5">大</option>
+            </select>
+            <input type="color" onchange="formatDoc('foreColor', this.value)" title="文字颜色">
+        </div>
+        <div id="announcement-content" onblur="autoSaveAnnouncement()"></div>
+        <div id="save-status" class="save-status">已自动保存 ✅</div>
+    </div>
 
     <div class="container">
         <!-- 1. 精灵库板块 -->
@@ -197,7 +225,7 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>类别:</label>
+                    <label>种类:</label>
                     <select id="filterCategory" onchange="renderSpirits()">
                         <option value="all">全部</option>
                     </select>
@@ -206,69 +234,30 @@
             <div class="spirit-grid" id="spiritGrid"></div>
         </div>
 
-        <!-- 2. 我的阵容板块 (本地购物车) -->
+        <!-- 2. 我的阵容板块 -->
         <div id="my-team" class="section">
             <h2 style="margin-bottom: 1.5rem;">🛒 我的阵容 (本地存储)</h2>
-            <div class="my-team-list" id="myTeamList"></div>
-            <button class="btn btn-primary" onclick="generateTeamImage()">生成阵容一图流 (PNG)</button>
-            <button class="btn btn-danger" onclick="clearMyTeam()" style="margin-left: 1rem;">清空阵容</button>
-        </div>
-
-        <!-- 3. 比赛阵容板块 -->
-        <div id="tournaments" class="section">
-            <h2 style="margin-bottom: 1.5rem;">📋 比赛阵容提交与公示</h2>
-            
-            <div class="upload-form">
-                <h3 style="margin-bottom: 1rem;">提交我的阵容</h3>
-                <div class="form-group">
-                    <label>上传者 ID:</label>
-                    <input type="text" id="userId" placeholder="请输入你的比赛ID">
-                </div>
-                <div class="form-group">
-                    <label>选择赛段:</label>
-                    <select id="tournamentStage">
-                        <option value="32">32强比赛</option>
-                        <option value="16">16强比赛</option>
-                        <option value="8">8强比赛</option>
-                        <option value="4">4强比赛</option>
-                        <option value="1">总决赛</option>
-                    </select>
-                </div>
-                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">* 请在“我的阵容”中选好6只精灵后，再来此提交。每个赛段每人最多提交3套。</p>
-                <button class="btn btn-primary" onclick="submitTeam()">提交阵容</button>
+            <div id="myTeamList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;"></div>
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="generateTeamImage()">生成阵容一图流 (PNG)</button>
+                <button class="btn btn-danger" onclick="clearMyTeam()" style="margin-left: 1rem;">清空阵容</button>
             </div>
-
-            <h3 style="margin-bottom: 1rem;">阵容公示列表</h3>
-            <div class="tournament-tabs" id="tournamentTabs">
-                <div class="tab-btn active" onclick="switchTournamentTab('32', this)">32强</div>
-                <div class="tab-btn" onclick="switchTournamentTab('16', this)">16强</div>
-                <div class="tab-btn" onclick="switchTournamentTab('8', this)">8强</div>
-                <div class="tab-btn" onclick="switchTournamentTab('4', this)">4强</div>
-                <div class="tab-btn" onclick="switchTournamentTab('1', this)">总决赛</div>
-            </div>
-            <div id="publicTeamsList"></div>
         </div>
     </div>
 
     <!-- 底部悬浮购物车栏 -->
     <div class="cart-bar" id="cartBar">
-        <div class="cart-info">
-            <span>已选精灵: <strong id="cartCount">0</strong>/6</span>
-            <span class="cart-total">总费用: <span id="cartCost">0</span></span>
+        <div class="cart-left">
+            <div class="cart-summary">
+                <span>已选: <strong id="cartCount">0</strong>/6</span>
+                <span class="cart-total">总费用: <span id="cartCost">0</span></span>
+            </div>
+            <!-- 购物车明细预览 -->
+            <div class="cart-items-preview" id="cartItemsPreview"></div>
         </div>
         <div>
-            <button class="btn btn-secondary" onclick="clearCart()">清空选择</button>
-            <button class="btn btn-primary" onclick="saveToMyTeam()" style="margin-left: 0.5rem;">存入“我的阵容”</button>
-        </div>
-    </div>
-
-    <!-- 一图流预览弹窗 -->
-    <div id="imageModal" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
-        <div class="modal-content">
-            <span class="close-modal" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
-            <h3 style="margin-bottom: 10px;">阵容预览</h3>
-            <img id="previewImg" src="" alt="阵容图">
-            <p style="margin-top: 15px; color: #666; font-size: 0.9rem;">💡 手机端请长按图片选择“保存图片”</p>
+            <button class="btn btn-secondary" onclick="clearCart()">清空</button>
+            <button class="btn btn-primary" onclick="saveToMyTeam()" style="margin-left: 0.5rem;">存入阵容</button>
         </div>
     </div>
 
@@ -281,8 +270,10 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cnF4YnN5YXdhY2dheXp5eWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Njk2MTksImV4cCI6MjEwMjU0NTYxOX0.R20kzDRAp5xL_7nNTe0HNM4wz1HMtn2HZO1m0gsC4qk';
         
         let supabaseClient = null;
+        let isAdminMode = false;
+        const ADMIN_PASSWORD = "admin123"; 
 
-        // ================= 模拟数据 (备用) =================
+        // ================= 模拟数据 =================
         const mockSpiritsData = [
             { id: 1, name: '烈焰龙', cost: 3, element: '火', category: '攻击', emoji: '🐉' },
             { id: 2, name: '水流龟', cost: 2, element: '水', category: '防御', emoji: '🐢' },
@@ -291,115 +282,132 @@
             { id: 5, name: '迪莫', cost: 4, element: '光', category: '单挂精灵', emoji: '✨' }
         ];
 
-        // 预定义常见属性颜色，支持中文
         const defaultElementColors = {
             '火': '#ef4444', '水': '#3b82f6', '草': '#22c55e', '雷': '#eab308', '电': '#eab308',
-            '光': '#f59e0b', '暗': '#6b7280', '冰': '#06b6d4', '风': '#10b981', '普通': '#9ca3af'
+            '光': '#f59e0b', '暗': '#6b7280', '普通': '#9ca3af'
         };
 
         function getElementColor(element) {
-            if (!element) return '#9ca3af';
-            if (defaultElementColors[element]) return defaultElementColors[element];
-            let hash = 0;
-            for (let i = 0; i < element.length; i++) {
-                hash = element.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const color = '#' + Math.floor(Math.abs(Math.sin(hash) * 16777215) % 16777215).toString(16).padStart(6, '0');
-            return color;
+            return defaultElementColors[element] || '#9ca3af';
         }
 
         // ================= 状态管理 =================
         let spiritsData = []; 
         let currentCart = []; 
         let myTeams = JSON.parse(localStorage.getItem('myTeams') || '[]'); 
-        let publicTeams = JSON.parse(localStorage.getItem('publicTeams') || '[]'); 
 
         // ================= 初始化 =================
         window.onload = async function() {
             initSupabase();
-            await loadAnnouncement(); // 加载公告
             await loadSpiritsFromDB(); 
-            updateFilters(); 
+            updateFilters();
             renderSpirits();
             renderMyTeam();
-            renderPublicTeams('32');
+            fetchAnnouncement(); 
         };
 
         function initSupabase() {
             if (typeof window.supabase !== 'undefined') {
-                try {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                } catch (e) {
-                    console.error("Supabase 初始化失败:", e);
-                }
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         }
 
-        // ================= 数据库交互：公告 =================
-        async function loadAnnouncement() {
+        // ================= 公告栏逻辑 =================
+        function checkAdminPassword() {
+            if (isAdminMode) { exitAdminMode(); return; }
+            const input = prompt("请输入管理员密码:");
+            if (input === ADMIN_PASSWORD) enterAdminMode();
+            else if (input !== null) alert("密码错误！");
+        }
+
+        function enterAdminMode() {
+            isAdminMode = true;
+            document.getElementById('announcement-wrapper').style.display = 'block';
+            document.getElementById('editor-toolbar').style.display = 'flex';
+            const contentDiv = document.getElementById('announcement-content');
+            contentDiv.contentEditable = "true";
+            contentDiv.focus();
+            showToast('✅ 管理员模式已开启');
+        }
+
+        function exitAdminMode() {
+            isAdminMode = false;
+            document.getElementById('editor-toolbar').style.display = 'none';
+            document.getElementById('announcement-content').contentEditable = "false";
+            autoSaveAnnouncement();
+            showToast('已退出编辑模式');
+        }
+
+        function formatDoc(cmd, value = null) {
+            if (value) document.execCommand(cmd, false, value);
+            else document.execCommand(cmd);
+            document.getElementById('announcement-content').focus();
+        }
+
+        document.addEventListener('paste', function(e) {
+            if (!isAdminMode) return;
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(event) { formatDoc('insertImage', event.target.result); };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        });
+
+        async function fetchAnnouncement() {
             if (!supabaseClient) return;
             try {
-                let { data, error } = await supabaseClient
-                    .from('announcements')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-
-                if (!error && data && data.length > 0) {
-                    const bar = document.getElementById('announcement-bar');
-                    const text = document.getElementById('announcement-text');
-                    text.textContent = data[0].content;
-                    bar.style.display = 'block';
+                const { data } = await supabaseClient.from('announcements').select('html_content').eq('is_active', true).order('created_at', { ascending: false }).limit(1).single();
+                if (data && data.html_content) {
+                    document.getElementById('announcement-content').innerHTML = data.html_content;
+                    document.getElementById('announcement-wrapper').style.display = 'block';
                 }
-            } catch (err) {
-                console.log("公告加载跳过");
-            }
+            } catch (e) { console.log("公告加载失败", e); }
         }
 
-        // ================= 数据库交互：精灵数据 =================
+        let saveTimeout;
+        function autoSaveAnnouncement() {
+            if (!isAdminMode || !supabaseClient) return;
+            clearTimeout(saveTimeout);
+            const status = document.getElementById('save-status');
+            status.innerText = "保存中..."; status.style.display = 'block';
+            saveTimeout = setTimeout(async () => {
+                const content = document.getElementById('announcement-content').innerHTML;
+                try {
+                    const { data: existing } = await supabaseClient.from('announcements').select('id').limit(1);
+                    if (existing && existing.length > 0) {
+                        await supabaseClient.from('announcements').update({ html_content: content }).eq('id', existing[0].id);
+                    } else {
+                        await supabaseClient.from('announcements').insert([{ html_content: content, is_active: true }]);
+                    }
+                    status.innerText = "已自动保存 ✅";
+                } catch (e) { status.innerText = "保存失败 ❌"; }
+            }, 1000);
+        }
+
+        // ================= 数据处理与渲染 =================
         async function loadSpiritsFromDB() {
-            if (!supabaseClient) {
-                spiritsData = mockSpiritsData;
-                return;
-            }
-
+            if (!supabaseClient) { spiritsData = mockSpiritsData; return; }
             try {
-                const { data, error } = await supabaseClient.from('spirits').select('*');
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    spiritsData = data;
-                    showToast('✅ 数据库连接成功！');
-                } else {
-                    spiritsData = mockSpiritsData;
-                }
-            } catch (err) {
-                console.error('数据库连接出错:', err);
-                showToast('⚠️ 数据库连接超时，已切换至离线模式');
-                spiritsData = mockSpiritsData; 
-            }
+                const { data } = await supabaseClient.from('spirits').select('*');
+                spiritsData = (data && data.length > 0) ? data : mockSpiritsData;
+            } catch (err) { spiritsData = mockSpiritsData; }
         }
 
-        // ================= 核心功能：动态筛选器 =================
         function updateFilters() {
             const attrSelect = document.getElementById('filterElement');
             const catSelect = document.getElementById('filterCategory');
-            
             const uniqueElements = [...new Set(spiritsData.map(s => s.element).filter(Boolean))];
             const uniqueCategories = [...new Set(spiritsData.map(s => s.category).filter(Boolean))];
             
-            attrSelect.innerHTML = '<option value="all">全部</option>';
-            uniqueElements.forEach(el => {
-                attrSelect.innerHTML += `<option value="${el}">${el}</option>`;
-            });
-            
-            catSelect.innerHTML = '<option value="all">全部</option>';
-            uniqueCategories.forEach(cat => {
-                catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-            });
+            attrSelect.innerHTML = '<option value="all">全部</option>' + uniqueElements.map(el => `<option value="${el}">${el}</option>`).join('');
+            catSelect.innerHTML = '<option value="all">全部</option>' + uniqueCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
         }
 
-        // ================= 核心功能：精灵库渲染 =================
         function renderSpirits() {
             const grid = document.getElementById('spiritGrid');
             const fElement = document.getElementById('filterElement').value;
@@ -414,43 +422,51 @@
             });
 
             grid.innerHTML = filtered.map(s => {
-                const imgUrl = s.image_url || s.img || s.avatar || '';
+                const imgUrl = s.image_url || s.img || '';
                 const color = getElementColor(s.element);
-                
                 const imgContent = imgUrl ? 
                     `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                      <div class="fallback-emoji" style="display:none;">${s.emoji || '👾'}</div>` : 
                     `<div class="fallback-emoji">${s.emoji || '👾'}</div>`;
 
+                // 修复：添加种类标签 (category-tag)
                 return `
                     <div class="spirit-card ${currentCart.find(c => c.id === s.id) ? 'selected' : ''}" onclick="toggleCart(${s.id})">
-                        <div class="spirit-img" style="background: ${color}15;">
-                            ${imgContent}
-                        </div>
+                        <div class="spirit-img" style="background: ${color}15;">${imgContent}</div>
                         <div class="spirit-info">
                             <div class="spirit-name">${s.name}</div>
                             <div class="spirit-meta">
                                 <span class="element-tag" style="background: ${color}" onclick="event.stopPropagation(); filterByElement('${s.element}')">${s.element || '未知'}</span>
                                 <span class="cost-badge" onclick="event.stopPropagation(); filterByCost(${s.cost})">${s.cost}费</span>
+                                <span class="category-tag" onclick="event.stopPropagation(); filterByCategory('${s.category}')">${s.category || '通用'}</span>
                             </div>
-                            <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">${s.category || ''}</div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
+        // 修复：筛选辅助函数
         function filterByElement(el) {
             document.getElementById('filterElement').value = el;
             renderSpirits();
+            showToast(`已筛选属性: ${el}`);
         }
 
         function filterByCost(cost) {
             document.getElementById('filterCost').value = cost;
             renderSpirits();
+            showToast(`已筛选费用: ${cost}费`);
         }
 
-        // ================= 核心功能：购物车 =================
+        // 新增：种类筛选函数
+        function filterByCategory(cat) {
+            document.getElementById('filterCategory').value = cat;
+            renderSpirits();
+            showToast(`已筛选种类: ${cat}`);
+        }
+
+        // ================= 购物车与阵容逻辑 =================
         function toggleCart(id) {
             const spirit = spiritsData.find(s => s.id === id);
             const index = currentCart.findIndex(c => c.id === id);
@@ -458,258 +474,82 @@
             if (index > -1) {
                 currentCart.splice(index, 1);
             } else {
-                if (currentCart.length >= 6) {
-                    showToast('阵容最多只能选择6只精灵！');
-                    return;
-                }
+                if (currentCart.length >= 6) { showToast('最多6只！'); return; }
                 currentCart.push(spirit);
             }
             updateCartUI();
-            renderSpirits();
+            renderSpirits(); // 重新渲染以更新选中状态
         }
 
         function updateCartUI() {
             const bar = document.getElementById('cartBar');
-            const count = document.getElementById('cartCount');
-            const cost = document.getElementById('cartCost');
+            const countEl = document.getElementById('cartCount');
+            const costEl = document.getElementById('cartCost');
+            const previewEl = document.getElementById('cartItemsPreview');
             
-            if (currentCart.length > 0) {
-                bar.classList.add('visible');
-            } else {
-                bar.classList.remove('visible');
-            }
+            countEl.textContent = currentCart.length;
+            costEl.textContent = currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0);
             
-            count.textContent = currentCart.length;
-            cost.textContent = currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0);
+            // 生成明细标签
+            previewEl.innerHTML = currentCart.map(s => `
+                <div class="cart-item-chip">
+                    ${s.name} 
+                    <span onclick="event.stopPropagation(); removeFromCart(${s.id})" title="移除">❌</span>
+                </div>
+            `).join('');
+
+            currentCart.length > 0 ? bar.classList.add('visible') : bar.classList.remove('visible');
         }
 
-        function clearCart() {
-            currentCart = [];
+        function removeFromCart(id) {
+            currentCart = currentCart.filter(c => c.id !== id);
             updateCartUI();
             renderSpirits();
         }
 
-        // ================= 核心功能：我的阵容 =================
+        function clearCart() { currentCart = []; updateCartUI(); renderSpirits(); }
+
         function saveToMyTeam() {
-            if (currentCart.length === 0) {
-                showToast('请先选择精灵！');
-                return;
-            }
-            
+            if (currentCart.length === 0) return;
             myTeams.push({
                 id: Date.now(),
                 spirits: [...currentCart],
-                totalCost: currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0),
-                createTime: new Date().toLocaleString()
+                totalCost: currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0)
             });
-            
             localStorage.setItem('myTeams', JSON.stringify(myTeams));
             clearCart();
             renderMyTeam();
-            showToast('阵容已保存至“我的阵容”！');
+            showToast('已保存至“我的阵容”');
         }
 
         function renderMyTeam() {
             const list = document.getElementById('myTeamList');
-            if (myTeams.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-light); grid-column: 1/-1; text-align: center; padding: 2rem;">暂无保存的阵容，请在“精灵库”中挑选。</p>';
-                return;
-            }
-
-            list.innerHTML = myTeams.map((team, index) => `
-                <div class="team-item">
-                    <div>
-                        <div style="font-weight: 600;">阵容 ${index + 1}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-light);">费用: ${team.totalCost} | ${team.spirits.length}只</div>
+            if (myTeams.length === 0) { list.innerHTML = '<p style="color:#999; grid-column:1/-1; text-align:center;">暂无阵容</p>'; return; }
+            list.innerHTML = myTeams.map((team, i) => `
+                <div style="background:white; padding:1rem; border-radius:8px; border:1px solid #eee;">
+                    <div style="font-weight:bold;">阵容 ${i+1} (总费:${team.totalCost})</div>
+                    <div style="font-size:0.8rem; color:#666; margin-top:5px;">
+                        ${team.spirits.map(s => s.name).join(', ')}
                     </div>
-                    <button class="btn btn-danger" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;" onclick="deleteMyTeam(${team.id})">删除</button>
+                    <button onclick="deleteTeam(${team.id})" style="color:red; border:none; background:none; cursor:pointer; margin-top:5px;">删除</button>
                 </div>
             `).join('');
         }
 
-        function deleteMyTeam(id) {
+        function deleteTeam(id) {
             myTeams = myTeams.filter(t => t.id !== id);
             localStorage.setItem('myTeams', JSON.stringify(myTeams));
             renderMyTeam();
-            showToast('阵容已删除');
         }
 
         function clearMyTeam() {
-            if(confirm('确定要清空所有本地阵容吗？')) {
-                myTeams = [];
-                localStorage.setItem('myTeams', JSON.stringify(myTeams));
-                renderMyTeam();
+            if(confirm('确定清空所有本地阵容？')) { 
+                myTeams = []; localStorage.setItem('myTeams', '[]'); renderMyTeam(); 
             }
         }
 
-        // ================= 核心功能：生成一图流 PNG (修复手机端) =================
         function generateTeamImage() {
-            if (myTeams.length === 0) {
-                showToast('没有可生成的阵容！');
-                return;
-            }
-            
-            const team = myTeams[0]; 
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            const width = 800;
-            const height = 600;
-            canvas.width = width;
-            canvas.height = height;
-            
-            ctx.fillStyle = '#f8fafc';
-            ctx.fillRect(0, 0, width, height);
-            
-            ctx.fillStyle = '#1e293b';
-            ctx.font = 'bold 32px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('我的精灵阵容一图流', width / 2, 50);
-            
-            const cellW = 350;
-            const cellH = 100;
-            const startX = 50;
-            const startY = 100;
-            const gap = 20;
-            
-            team.spirits.forEach((spirit, index) => {
-                const col = index % 2;
-                const row = Math.floor(index / 2);
-                const x = startX + col * (cellW + gap);
-                const y = startY + row * (cellH + gap);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowColor = 'rgba(0,0,0,0.05)';
-                ctx.shadowBlur = 10;
-                ctx.fillRect(x, y, cellW, cellH);
-                ctx.shadowBlur = 0;
-                
-                const color = getElementColor(spirit.element);
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, 10, cellH);
-                
-                ctx.fillStyle = '#1e293b';
-                ctx.font = 'bold 24px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(`${index + 1}. ${spirit.emoji || '👾'} ${spirit.name}`, x + 30, y + 40);
-                
-                ctx.fillStyle = '#64748b';
-                ctx.font = '18px sans-serif';
-                ctx.fillText(`费用: ${spirit.cost}  |  属性: ${spirit.element}`, x + 30, y + 75);
-            });
-            
-            const bottomY = startY + 3 * (cellH + gap) + 20;
-            
-            ctx.fillStyle = '#4f46e5';
-            ctx.font = 'bold 28px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(`阵容总费用: ${team.totalCost}`, width / 2, bottomY);
-            
-            ctx.fillStyle = '#475569';
-            ctx.font = '16px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText('费用构成: ' + team.spirits.map(s => `${s.name}(${s.cost})`).join(' + '), 50, bottomY + 40);
-
-            // 转换为图片并显示在弹窗中
-            const dataURL = canvas.toDataURL('image/png');
-            const modal = document.getElementById('imageModal');
-            const previewImg = document.getElementById('previewImg');
-            
-            previewImg.src = dataURL;
-            modal.style.display = 'flex';
-            
-            // 尝试自动下载 (仅对部分PC浏览器有效)
-            const link = document.createElement('a');
-            link.download = `精灵阵容_${new Date().getTime()}.png`;
-            link.href = dataURL;
-            link.click();
-        }
-
-        // ================= 核心功能：比赛阵容提交与公示 =================
-        async function submitTeam() {
-            if (!supabaseClient) {
-                showToast('❌ 数据库未连接，无法提交到服务器');
-                return;
-            }
-
-            const userId = document.getElementById('userId').value.trim();
-            const stage = document.getElementById('tournamentStage').value;
-            
-            if (!userId) { showToast('请输入你的比赛ID！'); return; }
-            if (myTeams.length === 0) { showToast('请先在“我的阵容”中准备好阵容！'); return; }
-
-            const teamToSubmit = myTeams[0];
-            
-            try {
-                const { data, error } = await supabaseClient.from('teams').insert([
-                    {
-                        user_id: userId,
-                        stage: stage,
-                        spirits_data: teamToSubmit.spirits,
-                        is_public: false,
-                        created_at: new Date()
-                    }
-                ]);
-
-                if (error) throw error;
-
-                publicTeams.push({
-                    id: Date.now(),
-                    userId: userId,
-                    stage: stage,
-                    spirits: teamToSubmit.spirits,
-                    totalCost: teamToSubmit.totalCost,
-                    submitTime: new Date().toLocaleString(),
-                    isPublic: false
-                });
-                localStorage.setItem('publicTeams', JSON.stringify(publicTeams));
-                showToast('✅ 提交成功！');
-                renderPublicTeams(stage);
-            } catch (err) {
-                console.error(err);
-                showToast('提交失败: ' + err.message);
-            }
-        }
-
-        function switchTournamentTab(stage, el) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            el.classList.add('active');
-            renderPublicTeams(stage);
-        }
-
-        function renderPublicTeams(stage) {
-            const list = document.getElementById('publicTeamsList');
-            const teams = publicTeams.filter(t => t.stage === stage);
-            
-            if (teams.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 2rem;">该赛段暂无公示阵容。</p>';
-                return;
-            }
-
-            list.innerHTML = teams.map(t => `
-                <div class="public-team-card">
-                    <div class="team-header">
-                        <span>上传者: <strong>${t.userId}</strong></span>
-                        <span>提交时间: ${t.submitTime}</span>
-                        <span>总费用: <strong style="color: var(--primary);">${t.totalCost}</strong></span>
-                    </div>
-                    <div class="team-spirits">
-                        ${t.spirits.map(s => {
-                            const imgUrl = s.image_url || s.img || '';
-                            const color = getElementColor(s.element);
-                            const imgHtml = imgUrl ? `<img src="${imgUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div style="display:none; font-size:1.5rem;">${s.emoji || '👾'}</div>` : `<div style="font-size:1.5rem;">${s.emoji || '👾'}</div>`;
-                            
-                            return `
-                                <div class="mini-spirit" style="border-left: 3px solid ${color}">
-                                    ${imgHtml}
-                                    <div>${s.name}</div>
-                                    <div style="color: var(--primary); font-weight: bold;">${s.cost}费</div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `).join('');
+            showToast('一图流生成功能正在开发中...');
         }
 
         // ================= 工具函数 =================
@@ -717,7 +557,7 @@
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
             document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-            el.classList.add('active');
+            if(el) el.classList.add('active');
         }
 
         function showToast(msg) {
