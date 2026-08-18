@@ -15,6 +15,8 @@
             --text: #1f2937;
             --text-light: #6b7280;
             --border: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
@@ -113,7 +115,7 @@
         }
         .element-tag:hover { opacity: 0.8; }
 
-        /* 新增：种类标签样式 */
+        /* 种类标签样式 */
         .category-tag {
             background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db;
             padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem;
@@ -123,7 +125,7 @@
             background: #e5e7eb; border-color: #9ca3af; color: #1f2937;
         }
 
-        /* 底部悬浮购物车 - 升级版 */
+        /* 底部悬浮购物车 */
         .cart-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             background: white; border-top: 1px solid var(--border); 
@@ -140,7 +142,6 @@
         .cart-summary { display: flex; gap: 2rem; align-items: center; font-size: 1.1rem; }
         .cart-total { font-weight: 700; color: var(--primary); }
         
-        /* 购物车明细列表 */
         .cart-items-preview {
             display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px;
             scrollbar-width: thin;
@@ -162,6 +163,17 @@
         .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
 
+        /* 管理员导入面板样式 */
+        .admin-panel {
+            background: white; border: 2px solid var(--primary); border-radius: 12px;
+            padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .import-area { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .import-input { width: 100%; height: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; resize: vertical; }
+        .import-preview { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
+        .preview-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 4px 0; }
+        
         @media (max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
             .nav-links { width: 100%; justify-content: center; }
@@ -169,6 +181,7 @@
             .editor-toolbar { justify-content: center; }
             .cart-bar { flex-direction: column; gap: 1rem; padding: 1rem; }
             .cart-left { max-width: 100%; }
+            .import-area { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -204,6 +217,33 @@
     </div>
 
     <div class="container">
+        <!-- 管理员导入面板 (默认隐藏) -->
+        <div id="adminImportPanel" class="admin-panel" style="display:none;">
+            <div class="admin-header">
+                <h3>📥 批量导入精灵数据</h3>
+                <button class="btn btn-secondary" onclick="document.getElementById('adminImportPanel').style.display='none'">关闭</button>
+            </div>
+            <div class="import-area">
+                <div>
+                    <p style="margin-bottom:8px; font-size:0.9rem; color:#666;">
+                        <strong>支持格式：</strong><br>
+                        1. 直接从 Excel/WPS 复制表格内容粘贴<br>
+                        2. 粘贴 CSV 文本 (逗号分隔)<br>
+                        <span style="color:#ef4444; font-size:0.8rem;">注意：请确保第一行是表头 (name, cost, element, category, emoji)</span>
+                    </p>
+                    <textarea id="csvInput" class="import-input" placeholder="在此处粘贴你的表格数据...&#10;例如：&#10;name	cost	element	category	emoji&#10;喵喵	1	草	御三家	https://..."></textarea>
+                    <div style="margin-top:10px; display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="parseAndImportCSV()">开始智能解析并导入</button>
+                        <button class="btn btn-secondary" onclick="downloadTemplate()">下载模板</button>
+                    </div>
+                </div>
+                <div>
+                    <p style="margin-bottom:8px; font-size:0.9rem; color:#666;">预览 (前5条):</p>
+                    <div id="importPreview" class="import-preview">等待数据...</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 1. 精灵库板块 -->
         <div id="spirits" class="section active">
             <div class="filters">
@@ -252,7 +292,6 @@
                 <span>已选: <strong id="cartCount">0</strong>/6</span>
                 <span class="cart-total">总费用: <span id="cartCost">0</span></span>
             </div>
-            <!-- 购物车明细预览 -->
             <div class="cart-items-preview" id="cartItemsPreview"></div>
         </div>
         <div>
@@ -324,6 +363,7 @@
             isAdminMode = true;
             document.getElementById('announcement-wrapper').style.display = 'block';
             document.getElementById('editor-toolbar').style.display = 'flex';
+            document.getElementById('adminImportPanel').style.display = 'block'; // 显示导入面板
             const contentDiv = document.getElementById('announcement-content');
             contentDiv.contentEditable = "true";
             contentDiv.focus();
@@ -332,6 +372,8 @@
 
         function exitAdminMode() {
             isAdminMode = false;
+            document.getElementById('announcement-wrapper').style.display = 'none';
+            document.getElementById('adminImportPanel').style.display = 'none';
             document.getElementById('editor-toolbar').style.display = 'none';
             document.getElementById('announcement-content').contentEditable = "false";
             autoSaveAnnouncement();
@@ -422,14 +464,17 @@
             });
 
             grid.innerHTML = filtered.map(s => {
-                const imgUrl = s.image_url || s.img || '';
-                const color = getElementColor(s.element);
+                // 优先使用 image_url，如果没有则尝试 emoji 字段（如果是链接的话）
+                const imgUrl = s.image_url || (s.emoji && s.emoji.startsWith('http') ? s.emoji : null);
+                const displayEmoji = s.emoji && !s.emoji.startsWith('http') ? s.emoji : '👾';
+                
                 const imgContent = imgUrl ? 
                     `<img src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                     <div class="fallback-emoji" style="display:none;">${s.emoji || '👾'}</div>` : 
-                    `<div class="fallback-emoji">${s.emoji || '👾'}</div>`;
+                     <div class="fallback-emoji" style="display:none;">${displayEmoji}</div>` : 
+                    `<div class="fallback-emoji">${displayEmoji}</div>`;
 
-                // 修复：添加种类标签 (category-tag)
+                const color = getElementColor(s.element);
+
                 return `
                     <div class="spirit-card ${currentCart.find(c => c.id === s.id) ? 'selected' : ''}" onclick="toggleCart(${s.id})">
                         <div class="spirit-img" style="background: ${color}15;">${imgContent}</div>
@@ -446,7 +491,6 @@
             }).join('');
         }
 
-        // 修复：筛选辅助函数
         function filterByElement(el) {
             document.getElementById('filterElement').value = el;
             renderSpirits();
@@ -459,7 +503,6 @@
             showToast(`已筛选费用: ${cost}费`);
         }
 
-        // 新增：种类筛选函数
         function filterByCategory(cat) {
             document.getElementById('filterCategory').value = cat;
             renderSpirits();
@@ -478,7 +521,7 @@
                 currentCart.push(spirit);
             }
             updateCartUI();
-            renderSpirits(); // 重新渲染以更新选中状态
+            renderSpirits();
         }
 
         function updateCartUI() {
@@ -490,7 +533,6 @@
             countEl.textContent = currentCart.length;
             costEl.textContent = currentCart.reduce((sum, s) => sum + parseInt(s.cost), 0);
             
-            // 生成明细标签
             previewEl.innerHTML = currentCart.map(s => `
                 <div class="cart-item-chip">
                     ${s.name} 
@@ -550,6 +592,118 @@
 
         function generateTeamImage() {
             showToast('一图流生成功能正在开发中...');
+        }
+
+        // ================= 批量导入逻辑 (智能增强版) =================
+        function downloadTemplate() {
+            const csvContent = "name,cost,element,category,emoji\n新精灵,3,火,攻击,🔥\n测试精灵,1,水,防御,💧";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "spirit_import_template.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function parseAndImportCSV() {
+            const input = document.getElementById('csvInput').value.trim();
+            if (!input) { showToast('请先粘贴数据'); return; }
+
+            const lines = input.split('\n');
+            if (lines.length < 2) { showToast('数据行数不足，请检查'); return; }
+
+            // 智能检测分隔符：如果第一行包含 Tab，则使用 Tab，否则使用逗号
+            const firstLine = lines[0];
+            const separator = firstLine.includes('\t') ? '\t' : ',';
+            
+            console.log(`检测到分隔符: ${separator === '\t' ? 'Tab (Excel格式)' : 'Comma (CSV格式)'}`);
+
+            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase());
+            const newData = [];
+
+            // 简单解析
+            for (let i = 1; i < lines.length; i++) {
+                const currentline = lines[i].split(separator);
+                if (currentline.length < 2) continue;
+                
+                const obj = {};
+                headers.forEach((header, index) => {
+                    // 保留原始值，不要过度 trim，以防链接出错，但去掉首尾空格
+                    let val = currentline[index];
+                    if (val) val = val.trim();
+                    obj[header] = val;
+                });
+                
+                // 数据清洗与映射
+                // 注意：这里假设用户粘贴的最后一列如果是链接，我们将其视为 image_url
+                // 如果表头里明确有 image_url 则用 image_url，否则如果 emoji 列是 http 开头，也视为图片
+                if (obj.name) {
+                    let finalImg = null;
+                    let finalEmoji = obj.emoji || '👾';
+
+                    // 如果 emoji 列看起来像个链接
+                    if (finalEmoji && finalEmoji.startsWith('http')) {
+                        finalImg = finalEmoji;
+                        finalEmoji = '👾'; // 重置为默认表情，因为链接已经拿去当图片了
+                    }
+                    
+                    // 如果有专门的 image_url 列
+                    if (obj.image_url) {
+                        finalImg = obj.image_url;
+                    }
+
+                    newData.push({
+                        name: obj.name,
+                        cost: parseInt(obj.cost) || 1,
+                        element: obj.element || '普通',
+                        category: obj.category || '通用',
+                        emoji: finalEmoji,
+                        image_url: finalImg // 存入数据库的 image_url 字段
+                    });
+                }
+            }
+
+            // 更新预览
+            const previewDiv = document.getElementById('importPreview');
+            previewDiv.innerHTML = newData.slice(0, 5).map(item => `
+                <div class="preview-row">
+                    <span>${item.name}</span>
+                    <span>${item.cost}费 / ${item.element}</span>
+                </div>
+            `).join('') + (newData.length > 5 ? `<div style="padding:5px; color:#666;">...还有 ${newData.length - 5} 条</div>` : '');
+
+            if (newData.length === 0) { showToast('未识别到有效数据，请检查表头是否为: name, cost, element, category, emoji'); return; }
+
+            // 执行导入
+            if (confirm(`确认导入 ${newData.length} 条数据到数据库？\n(将覆盖同名精灵或新增)`)) {
+                importToSupabase(newData);
+            }
+        }
+
+        async function importToSupabase(dataArray) {
+            if (!supabaseClient) { showToast('数据库未连接，仅演示模式'); return; }
+            
+            showToast('正在导入...');
+            try {
+                // 使用 upsert 避免重复插入，或者根据需求只 insert
+                const { error } = await supabaseClient.from('spirits').insert(dataArray);
+                if (error) throw error;
+                
+                showToast(`成功导入 ${dataArray.length} 条数据！`);
+                document.getElementById('csvInput').value = '';
+                document.getElementById('importPreview').innerHTML = '导入完成';
+                
+                // 重新加载数据
+                await loadSpiritsFromDB();
+                updateFilters();
+                renderSpirits();
+            } catch (err) {
+                console.error(err);
+                showToast('导入失败: ' + err.message);
+            }
         }
 
         // ================= 工具函数 =================
